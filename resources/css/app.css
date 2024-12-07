@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap'); */
+
+
+.nav-link {
+    position: relative;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    height: 4px;
+    border-radius: 12px;
+    width: 50%; 
+    background-color: white;
+    transform: translateX(-50%) scaleX(0); 
+    transition: transform 0.3s ease;
+    pointer-events: none; 
+}
+
+.nav-link-active::before {
+    transform: translateX(-50%) scaleX(1); 
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
+
+.favorited {
+    color: #ef4444; 
+    transition: color 0.3s ease-in-out;
+}
+
+.favorited:hover {
+    color: #dc2626; 
+}
+
+.swiper-button-next,
+    .swiper-button-prev {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .swiper-button-next::after,
+    .swiper-button-prev::after {
+        font-size: 16px;
+    }
+
+    .swiper-pagination-bullet {
+        width: 12px; /* Adjust the width of the dot */
+        height: 12px; /* Adjust the height of the dot */
+        background: white; /* Default color of the dot */
+        opacity: 1; /* Ensure the dots are fully visible */
+        margin: 0 6px; /* Add spacing between the dots */
+        transition: background 0.3s ease; /* Smooth transition for hover and active states */
+    }
+    
+    /* Change the active dot color */
+    .swiper-pagination-bullet-active {
+       
+        transform: scale(1.2);
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    /* Optional: Hover effect for dots */
+    .swiper-pagination-bullet:hover {
+         background: #ccc;
+    }
+
+    .leaflet-routing-container {
+        display: none !important;
+    }
