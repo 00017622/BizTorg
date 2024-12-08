@@ -142,8 +142,7 @@ public function createProduct(Request $request)
 
 
                $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
-            
-                   $path = str_replace('\\', '/', $path); 
+             
                    $url = asset("storage/{$path}");
                    Log::info("Constructed image URL: {$url}");
                    return $url;
