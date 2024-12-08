@@ -139,7 +139,7 @@ public function createProduct(Request $request)
                 "🔗 <a href=\"https://biztorg.uz/obyavlenie/{$product->slug}\">Подробнее по ссылке</a>",
             ];
             
-            $productInfo = implode("\n", $productLines);            
+            $productInfo = implode('<br>', $productLines);
 
                $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
              
