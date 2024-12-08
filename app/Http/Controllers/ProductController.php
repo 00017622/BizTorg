@@ -128,16 +128,18 @@ public function createProduct(Request $request)
 
             $product->attributeValues()->sync($validatedData['attributes']);
 
-            $productInfo = "
-            📢 <b>Объявление:</b> {$product->name}\n
-            📝 <b>Описание:</b> {$product->description}\n
-            📍 <b>Регион:</b> {$product->region->parent->name}, {$product->region->name}\n
-            👤 <b>Контактное лицо:</b> {$product->user->name}\n
-            📞 <b>Номер телефона:</b> <a href=\"tel:{$product->user->profile->phone}\">{$product->user->profile->phone}</a>\n
-            🌍 <b>Карта:</b> <a href=\"https://www.google.com/maps?q={$product->latitude},{$product->longitude}\">Местоположение в Google Maps</a>\n
-            🌍 <b>Карта:</b> <a href=\"https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map\">Местоположение в Yandex Maps</a>\n
-            🔗 <a href=\"https://biztorg.uz/obyavlenie/{$product->slug}\">Подробнее по ссылке</a>
-";
+            $productLines = [
+                "📢 <b>Объявление:</b> {$product->name}",
+                "📝 <b>Описание:</b> {$product->description}",
+                "📍 <b>Регион:</b> {$product->region->parent->name}, {$product->region->name}",
+                "👤 <b>Контактное лицо:</b> {$product->user->name}",
+                "📞 <b>Номер телефона:</b> <a href=\"tel:{$product->user->profile->phone}\">{$product->user->profile->phone}</a>",
+                "🌍 <b>Карта:</b> <a href=\"https://www.google.com/maps?q={$product->latitude},{$product->longitude}\">Местоположение в Google Maps</a>",
+                "🌍 <b>Карта:</b> <a href=\"https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map\">Местоположение в Yandex Maps</a>",
+                "🔗 <a href=\"https://biztorg.uz/obyavlenie/{$product->slug}\">Подробнее по ссылке</a>",
+            ];
+            
+            $productInfo = implode("\n", $productLines);            
 
                $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
              
@@ -179,23 +181,23 @@ public function createProduct(Request $request)
         
         try {
 
-            $facebookProductInfo = "
-        📢 Объявление: {$product->name}
-        
-        📝 Описание: {$product->description}
-        
-        📍 Регион: {$product->region->parent->name}, {$product->region->name}
-        
-        👤 Контактное лицо: {$product->user->name}
-        
-        📞 Номер телефона: {$product->user->profile->phone}
-        
-        🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-        
-        🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map
-        
-        🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
-        ";
+            $facebookProductInfo = <<<INFO
+📢 Объявление: {$product->name}
+
+📝 Описание: {$product->description}
+
+📍 Регион: {$product->region->parent->name}, {$product->region->name}
+
+👤 Контактное лицо: {$product->user->name}
+
+📞 Номер телефона: {$product->user->profile->phone}
+
+🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
+
+🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map
+
+🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
+INFO;
 
         $imagesForFacebook = ProductImage::where('product_id', $product->id)->get()->map(function ($image) {
             $path = str_replace('\\', '/', $image->image_url);
