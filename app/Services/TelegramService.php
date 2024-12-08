@@ -11,8 +11,8 @@ class TelegramService {
 
     public function __construct()
     {
-        $this->botToken = env('BOT_TOKEN');
-        $this->chatId = env('CHAT_ID');
+        $this->botToken = '7171385917:AAExPpvxIBBt4CEj50itZL9ZU0BPcQGqCFw';
+        $this->chatId = '@biztorguz';
     }
 
     public function sendMessage(string $message)
