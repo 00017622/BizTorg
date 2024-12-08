@@ -51,9 +51,9 @@ class TelegramService {
                 'parse_mode' => 'HTML',
             ];
 
-            
+            Log::info("Sending photo to Telegram: " . json_encode($postFields));
     
-            $response = Http::post($url, $postFields);
+            $response = Http::asForm($url, $postFields);
 
             Log::info("Telegram API Response: " . $response->body());
     
@@ -77,6 +77,8 @@ class TelegramService {
             'chat_id' => $this->chatId,
             'media' => json_encode($media),
         ];
+
+        Log::info("Telegram API Payload: " . json_encode($postFields));
 
         $response = Http::post($url, $postFields);
 
