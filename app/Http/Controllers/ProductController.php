@@ -141,8 +141,8 @@ public function createProduct(Request $request)
 
 🌍 <b>Карта:</b> <a href="https://www.google.com/maps?q={$product->latitude},{$product->longitude}">Местоположение в Google Maps</a>
 
-🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm";
-">Местоположение в Yandex Maps</a>
+🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm">Местоположение в Yandex Maps</a>
+
 
 🔗 <a href="https://biztorg.uz/obyavlenie/{$product->slug}">Подробнее по ссылке</a>
 INFO;
@@ -226,7 +226,8 @@ INFO;
         try {
         
             $productImagesUrls = ProductImage::where('product_id', $product->id)->pluck('image_url');
-            
+            $imagesUrls = [];
+
             foreach ($productImagesUrls as $productImageUrl) {
                 $imagesUrls[] = asset("storage/{$productImageUrl}");
             }
