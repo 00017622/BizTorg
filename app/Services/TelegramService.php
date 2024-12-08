@@ -53,7 +53,7 @@ class TelegramService {
 
             Log::info("Sending photo to Telegram: " . json_encode($postFields));
     
-            $response = Http::asForm($url, $postFields);
+            $response = Http::post($url, $postFields);
 
             Log::info("Telegram API Response: " . $response->body());
     
