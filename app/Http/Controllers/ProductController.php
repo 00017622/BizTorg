@@ -109,13 +109,22 @@ public function createProduct(Request $request)
 
             foreach (['image1', 'image2', 'image3', 'image4'] as $imageField) {
                 if ($request->hasFile($imageField)) {
-                    $path = $request->file($imageField)->store('product-images', 'public');
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_url' => $path,
-                    ]);
+                    try {
+                        $path = $request->file($imageField)->store('product-images', 'public');
+                        Log::info("Image uploaded successfully to: $path");
+            
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_url' => $path,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to upload image: " . $e->getMessage());
+                    }
+                } else {
+                    Log::warning("No file detected for: $imageField");
                 }
             }
+            
 
             $product->attributeValues()->sync($validatedData['attributes']);
 
