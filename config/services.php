@@ -45,6 +45,7 @@ return [
     'client_id' => env('FACEBOOK_CLIENT_ID'),
     'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
     'redirect' => env('FACEBOOK_REDIRECT'),
+    'insta_access_token' => ('EAANaazjLaZCkBOZBR3M4OwJU8sOoHiOqNZBJAwTvW8ZCk20fUEF4IGAINjBuuGY6t2MzbG5Vx086mZCCBBXoNT9u3wZCgAb7yIT4UOVfn3b5IxZCd2fl9qIpjlPBpYc7xPWc9iqZC6ZC9CaNy3SWbXZBmXmKvQpRGakNqK8UQlX2KHGGz3xxelveZBaCAFz')
 ],
 
 'telegram' => [

@@ -13,7 +13,7 @@ class InstagramService {
 
     public function __construct()
     {
-        $this->accessToken = 'EAANaazjLaZCkBOZBR3M4OwJU8sOoHiOqNZBJAwTvW8ZCk20fUEF4IGAINjBuuGY6t2MzbG5Vx086mZCCBBXoNT9u3wZCgAb7yIT4UOVfn3b5IxZCd2fl9qIpjlPBpYc7xPWc9iqZC6ZC9CaNy3SWbXZBmXmKvQpRGakNqK8UQlX2KHGGz3xxelveZBaCAFz';
+        $this->accessToken = config('services.facebook.insta_access_token');
         $this->instagramAccountId = '17841468384967861';
         $this->defaultImage = 'https://brilliant24.ru/files/cat/template_01.png';
     }
@@ -21,6 +21,10 @@ class InstagramService {
 {
     if (empty($images)) {
         $images = [$this->defaultImage];
+    }
+
+    if (count($images) === 1) {
+        return $this->publishSingleImage($images[0], $caption);
     }
 
     $creationIds = [];
@@ -39,6 +43,42 @@ class InstagramService {
     // Publish the carousel post
     return $this->publishCarousel($creationIds, $caption);
 }
+
+    protected function publishSingleImage(string $imageUrl, string $caption) {
+        $url = "https://graph.facebook.com/v17.0/{$this->instagramAccountId}/media";
+
+        $response = Http::post($url, [
+            'image_url' => $imageUrl,
+            'caption' => $caption,
+            'access_token' => $this->accessToken,
+        ]);
+
+        if ($response->failed()) {
+            Log::error("Failed to publish single image: " . $response->body());
+            throw new Exception("Single image post creation failed.");
+        }
+
+        $creationId = $response->json()['id'];
+        return $this->publishMedia($creationId);
+    }
+
+    protected function publishMedia(string $creationId): array
+{
+    $url = "https://graph.facebook.com/v17.0/{$this->instagramAccountId}/media_publish";
+
+    $response = Http::post($url, [
+        'creation_id' => $creationId,
+        'access_token' => $this->accessToken,
+    ]);
+
+    if ($response->failed()) {
+        Log::error("Failed to publish media: " . $response->body());
+        throw new Exception("Media publication failed.");
+    }
+
+    return $response->json();
+}
+
 
 
     protected function uploadImage(string $imageUrl): string

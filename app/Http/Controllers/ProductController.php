@@ -129,17 +129,15 @@ public function createProduct(Request $request)
             $product->attributeValues()->sync($validatedData['attributes']);
 
             $productInfo = "
-            📢 <b>Объявление:</b> {$product->name}\n\n
-            📝 <b>Описание:</b> {$product->description}\n\n
-            📍 <b>Регион:</b> {$product->region->parent->name}, {$product->region->name}\n\n
-            👤 <b>Контактное лицо:</b> {$product->user->name}\n\n
-            📞 <b>Номер телефона:</b> <a href=\"tel:{$product->user->profile->phone}\">{$product->user->profile->phone}</a>\n\n
-            🌍 <b>Карта:</b> <a href=\"https://www.google.com/maps?q={$product->latitude},{$product->longitude}\">Местоположение в Google Maps</a>\n\n
-            🌍 <b>Карта:</b> <a href=\"https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map\">Местоположение в Yandex Maps</a>\n\n
+            📢 <b>Объявление:</b> {$product->name}\n
+            📝 <b>Описание:</b> {$product->description}\n
+            📍 <b>Регион:</b> {$product->region->parent->name}, {$product->region->name}\n
+            👤 <b>Контактное лицо:</b> {$product->user->name}\n
+            📞 <b>Номер телефона:</b> <a href=\"tel:{$product->user->profile->phone}\">{$product->user->profile->phone}</a>\n
+            🌍 <b>Карта:</b> <a href=\"https://www.google.com/maps?q={$product->latitude},{$product->longitude}\">Местоположение в Google Maps</a>\n
+            🌍 <b>Карта:</b> <a href=\"https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map\">Местоположение в Yandex Maps</a>\n
             🔗 <a href=\"https://biztorg.uz/obyavlenie/{$product->slug}\">Подробнее по ссылке</a>
 ";
-
-
 
                $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
              
@@ -182,7 +180,7 @@ public function createProduct(Request $request)
         try {
 
             $facebookProductInfo = "
-            📢 Объявление: {$product->name}
+        📢 Объявление: {$product->name}
         
         📝 Описание: {$product->description}
         
