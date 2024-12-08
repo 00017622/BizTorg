@@ -52,5 +52,7 @@ return [
     'client_id' => null,
     'client_secret' => env('TELEGRAM_TOKEN'),
     'redirect' => env('TELEGRAM_REDIRECT_URI'),
+    'chat_id' => env('CHAT_ID'),
+    'bot_token' => env('BOT_TOKEN'),
 ],
 ];

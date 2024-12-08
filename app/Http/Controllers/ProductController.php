@@ -156,13 +156,18 @@ public function createProduct(Request $request)
         try {
             if (count($images) > 1) {
                 $media = array_map(function ($image, $index) use ($productInfo) {
-                    return [
+                    // Base array for each media item
+                    $mediaItem = [
                         'type' => 'photo',
                         'media' => $image,
-                        'caption' => $index === 0 ? $productInfo : null,
                         'parse_mode' => 'HTML',
                     ];
+                    if ($index === 0) {
+                        $mediaItem['caption'] = $productInfo;
+                    }
+                    return $mediaItem;
                 }, $images, array_keys($images));
+                
                 $this->telegramService->sendMediaGroup($media);
             } elseif (count($images) === 1) {
                 Log::info("Sending single photo to Telegram: " . $images[0]);
