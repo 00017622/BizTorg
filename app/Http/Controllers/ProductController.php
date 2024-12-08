@@ -136,15 +136,15 @@ public function createProduct(Request $request)
             📞 <b>Номер телефона:</b> <a href=\"tel:{$product->user->profile->phone}\">{$product->user->profile->phone}</a>\n\n
             🌍 <b>Карта:</b> <a href=\"https://www.google.com/maps?q={$product->latitude},{$product->longitude}\">Местоположение в Google Maps</a>\n\n
             🌍 <b>Карта:</b> <a href=\"https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map\">Местоположение в Yandex Maps</a>\n\n
-            🔗 <a href=\"https://d8fe863d-e3c0-499d-8d65-705277a5d9f5.tunnel4.com/obyavlenie/{$product->slug}\">Подробнее по ссылке</a>
+            🔗 <a href=\"https://biztorg.uz/obyavlenie/{$product->slug}\">Подробнее по ссылке</a>
 ";
 
-               $tunnelUrl = 'https://d8fe863d-e3c0-499d-8d65-705277a5d9f5.tunnel4.com';
 
-               $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) use ($tunnelUrl) {
+
+               $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
             
                    $path = str_replace('\\', '/', $path); 
-                   $url = "{$tunnelUrl}/storage/{$path}";
+                   $url = asset("storage/{$path}");
                    Log::info("Constructed image URL: {$url}");
                    return $url;
                })->toArray();
@@ -192,15 +192,14 @@ public function createProduct(Request $request)
         
         🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map
         
-        🔗 Подробнее по ссылке: https://d8fe863d-e3c0-499d-8d65-705277a5d9f5.tunnel4.com/obyavlenie/{$product->slug}
+        🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
         ";
 
-        $tunnelUrl22 = 'https://d8fe863d-e3c0-499d-8d65-705277a5d9f5.tunnel4.com';
-        $imagesForFacebook = ProductImage::where('product_id', $product->id)->get()->map(function ($image) use($tunnelUrl22) {
+        $imagesForFacebook = ProductImage::where('product_id', $product->id)->get()->map(function ($image) {
             $path = str_replace('\\', '/', $image->image_url);
             return [
                 'id' => $image->id,
-                'image_url' => "{$tunnelUrl22}/storage/{$path}", 
+                'image_url' => asset("storage/{$path}"), 
             ];
         })->toArray();
 
@@ -214,17 +213,12 @@ public function createProduct(Request $request)
         }
 
         try {
-            $ngrokUrl = env('NGROK_URL', 'https://default-ngrok-url.com');
         
             $productImagesUrls = ProductImage::where('product_id', $product->id)->pluck('image_url');
-            $imagesUrls = [
-                'https://www.bmw-m.com/content/dam/bmw/marketBMW_M/www_bmw-m_com/topics/magazine-article-pool/2017/bmw-m5-f90/bmw-m5-f90-scale-text.jpg',
-                'https://www.exoticcarhacks.com/wp-content/uploads/2024/04/C2vfbnVA.jpeg'
-            ];
-        
-            // foreach ($productImagesUrls as $productImageUrl) {
-            //     $imagesUrls[] = "{$ngrokUrl}/storage/$productImageUrl";
-            // }
+            
+            foreach ($productImagesUrls as $productImageUrl) {
+                $imagesUrls[] = asset("storage/{$productImageUrl}");
+            }
         
             // Construct the Instagram message
             $region = $product->region->parent->name ?? 'Unknown Region';
@@ -246,7 +240,7 @@ public function createProduct(Request $request)
         
             🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map
         
-            🔗 Подробнее по ссылке: {$ngrokUrl}/obyavlenie/{$product->slug}
+            🔗 Подробнее по ссылке: https://biztorg/obyavlenie/{$product->slug}
             ";
         
             // Send to Instagram
