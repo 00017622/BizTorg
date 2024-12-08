@@ -141,7 +141,8 @@ public function createProduct(Request $request)
 
 🌍 <b>Карта:</b> <a href="https://www.google.com/maps?q={$product->latitude},{$product->longitude}">Местоположение в Google Maps</a>
 
-🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map">Местоположение в Yandex Maps</a>
+🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm";
+">Местоположение в Yandex Maps</a>
 
 🔗 <a href="https://biztorg.uz/obyavlenie/{$product->slug}">Подробнее по ссылке</a>
 INFO;
@@ -200,7 +201,7 @@ INFO;
 
 🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
 
-🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map
+🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
 
 🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
 INFO;
@@ -248,7 +249,7 @@ INFO;
         
             🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
         
-            🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map
+            🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
         
             🔗 Подробнее по ссылке: https://biztorg/obyavlenie/{$product->slug}
             ";
