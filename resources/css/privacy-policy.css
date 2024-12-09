@@ -1,0 +1,102 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+/* Container */
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Headings */
+h1.main-title {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #007bff;
+}
+
+h2.section-title {
+    font-size: 1.5rem;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #0056b3;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+}
+
+h3.subsection-title {
+    font-size: 1.2rem;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* Paragraphs */
+p.text {
+    margin: 10px 0;
+    color: #555;
+}
+
+/* Lists */
+ul.list {
+    list-style-type: disc;
+    margin: 10px 0 20px 20px;
+    padding: 0;
+}
+
+ul.list li.list-item {
+    margin-bottom: 5px;
+    color: #555;
+}
+
+/* Contacts */
+ul.contact-list {
+    list-style: none;
+    margin: 10px 0 20px;
+    padding: 0;
+}
+
+ul.contact-list li.contact-item {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Links */
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Buttons (if needed) */
+button {
+    display: inline-block;
+    padding: 10px 15px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}

@@ -73,18 +73,13 @@ Route::middleware('auth')->group( function () {
 
 Route::get('/obyavlenie/{slug}', [ProductController::class, 'getProduct'])->name('product.get');
 Route::delete('/product/image/{id}', [ProductController::class, 'deleteImage'])->name('product.image.delete');
+Route::get('/privacy-policy', function () {
+    return view('privacy_policy');
+});
+
 require __DIR__.'/auth.php';
 
 use App\Models\Product;
-
-Route::get('/rss', function () {
-    $products = Product::latest()->get();
-    return response()
-        ->view('rss', compact('products'))
-        ->header('Content-Type', 'application/rss+xml; charset=UTF-8');
-});
-
-
 
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
