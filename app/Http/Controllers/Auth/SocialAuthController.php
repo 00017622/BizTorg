@@ -54,6 +54,11 @@ class SocialAuthController extends Controller
 
             if ($facebookUser->getEmail() !== null) {
                 $user = User::where('email', $facebookUser->getEmail())->first();
+                $userById = User::where('facebook_id', $facebookUser->getId())->first();
+
+                if ($userById) {
+                    Auth::login($userById);
+                }
     
                 if ($user){ 
                     Auth::login($user);
