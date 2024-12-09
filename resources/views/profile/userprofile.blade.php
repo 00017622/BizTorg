@@ -110,32 +110,28 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-    const defaultLat = 41.2995; // Default Tashkent latitude
-    const defaultLng = 69.2401; // Default Tashkent longitude
+    const defaultLat = 41.2995;
+    const defaultLng = 69.2401; 
 
-    // Fetch the user's saved coordinates from the Blade template
-    const userLat = parseFloat('{{ $user->profile->latitude ?? defaultLat }}');
-    const userLng = parseFloat('{{ $user->profile->longitude ?? defaultLng }}');
+    const userLat = parseFloat('{{ $user->profile->latitude ?? 41.2995 }}');
+    const userLng = parseFloat('{{ $user->profile->longitude ?? 69.2401 }}');
 
-    // Initialize the map
     const map = L.map('map', {
-        center: [userLat, userLng], // Center map on the user's coordinates
-        zoom: 12, // Adjust zoom level
-        dragging: true, // Disable dragging
-        scrollWheelZoom: true, // Disable scroll zoom
-        doubleClickZoom: false, // Disable double-click zoom
-        boxZoom: false, // Disable box zoom
-        keyboard: false, // Disable keyboard interactions
-        zoomControl: false, // Remove zoom controls
+        center: [userLat, userLng],
+        zoom: 12, 
+        dragging: true, 
+        scrollWheelZoom: true, 
+        doubleClickZoom: false, 
+        boxZoom: false, 
+        keyboard: false, 
+        zoomControl: false, 
     });
 
-    // Add the tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: ''
     }).addTo(map);
 
-    // Add a static marker at the user's coordinates
     L.marker([userLat, userLng]).addTo(map);
 });
 
