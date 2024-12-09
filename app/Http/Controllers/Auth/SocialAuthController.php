@@ -47,50 +47,52 @@ class SocialAuthController extends Controller
         return Socialite::driver('facebook')->redirect();
     }
 
-    public function handleFacebookCallback() {
+    public function handleFacebookCallback()
+{
+    try {
+        $facebookUser = Socialite::driver('facebook')->user();
 
-        try {
-            $facebookUser = Socialite::driver('facebook')->user();
+        // Initialize variables
+        $facebookId = $facebookUser->getId();
+        $email = $facebookUser->getEmail();
 
-            if ($facebookUser->getEmail() !== null) {
-                $user = User::where('email', $facebookUser->getEmail())->first();
-                $userById = User::where('facebook_id', $facebookUser->getId())->first();
-
-                if ($userById) {
-                    Auth::login($userById);
-                }
-    
-                if ($user){ 
-                    Auth::login($user);
-                } else {
-                    $user = User::create([
-                        'name' => $facebookUser->getName(),
-                        'email' => $facebookUser->getEmail(),
-                        'facebook_id' => $facebookUser->getId(),
-                        'password' => bcrypt(Str::random(16)),
-                        'role_id' => 0,
-                        'avatar' => $facebookUser->getAvatar(),
-                    ]);
-    
-                }
-            } else {
-                $user = User::create([
-                    'name' => $facebookUser->getName(),
-                    'facebook_id' => $facebookUser->getId(),
-                    'password' => bcrypt(Str::random(16)),
-                    'role_id' => 0,
-                    'avatar' => $facebookUser->getAvatar(),
-                ]);
-            }
-    
-            Auth::login($user);
-    
-            return redirect()->route('index.show');
-        } catch(\Exception $e) {
-            Log::error('Facebook login error: ' . $e->getMessage());
-            return redirect()->route('login')->withErrors(['msg' => 'Failed to login with Facebook.']);
+        // Check if a user exists by Facebook ID or email (skip email if null)
+        $userQuery = User::where('facebook_id', $facebookId);
+        if ($email !== null) {
+            $userQuery->orWhere('email', $email);
         }
+        $user = $userQuery->first();
+
+        if ($user) {
+            // If user exists, update Facebook ID if missing
+            if (!$user->facebook_id) {
+                $user->update(['facebook_id' => $facebookId]);
+            }
+
+            // Log in the user
+            Auth::login($user);
+        } else {
+            // Create a new user (email can be null)
+            $user = User::create([
+                'name' => $facebookUser->getName(),
+                'email' => $email, // Can be null
+                'facebook_id' => $facebookId,
+                'password' => bcrypt(Str::random(16)),
+                'role_id' => 0,
+                'avatar' => $facebookUser->getAvatar(),
+            ]);
+
+            Auth::login($user);
+        }
+
+        return redirect()->route('index.show');
+    } catch (\Exception $e) {
+        // Log the error and redirect back to the login page
+        Log::error('Facebook login error: ' . $e->getMessage());
+        return redirect()->route('login')->withErrors(['msg' => 'Failed to login with Facebook.']);
     }
+}
+
 
     public function redirectToTelegram() {
         return Socialite::provider('telegram')->redirect();
