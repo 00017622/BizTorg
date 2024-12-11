@@ -77,6 +77,10 @@ Route::get('/privacy-policy', function () {
     return view('privacy_policy');
 });
 
+Route::get('/pages-facebook', function () {
+    return view('pages_show');
+});
+
 require __DIR__.'/auth.php';
 
 use App\Models\Product;
