@@ -7,7 +7,7 @@
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto">
+  <div class="max-w-xl mx-auto">
     <h1 class="text-2xl font-bold text-center mb-6">Facebook and Instagram Pages Showcase</h1>
 
     <!-- Dropdown to Select Page -->
@@ -20,7 +20,7 @@
 
     <!-- Buttons to Fetch Data -->
     <div class="flex space-x-4 mb-6">
-      <button id="fetch-btn" class="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600">
+      <button id="fetch-btn" class="w-full bg-red-500 text-white p-3 rounded-lg font-semibold hover:bg-red-600">
         Fetch Page Details
       </button>
       <button id="engagement-btn" class="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600">
@@ -57,12 +57,12 @@
     </div>
 
     <!-- Instagram Section -->
-    <div class="mt-6">
+    <div class="mt-24">
       <label for="insta-select" class="block text-lg font-semibold mb-2">Select Instagram Account:</label>
       <select id="insta-select" class="w-full p-3 border rounded-lg">
         <option value="17841468384967861">BizTorg</option>
       </select>
-      <button id="insta-btn" class="w-full bg-purple-500 text-white p-3 rounded-lg font-semibold mt-4 hover:bg-purple-600">
+      <button id="insta-btn" class="w-full bg-red-500 text-white p-3 rounded-lg font-semibold mt-4 hover:bg-red-600">
         Fetch Instagram Details
       </button>
 
@@ -78,7 +78,7 @@
       </div>
 
       <!-- Instagram Posts Section -->
-      <button id="insta-posts-btn" class="w-full bg-indigo-500 text-white p-3 rounded-lg font-semibold mt-4 hover:bg-indigo-600">
+      <button id="insta-posts-btn" class="w-full bg-green-500 text-white p-3 rounded-lg font-semibold mt-4 hover:bg-green-600">
         Fetch Instagram Posts
       </button>
 
