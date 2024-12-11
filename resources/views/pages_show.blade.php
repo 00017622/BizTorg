@@ -57,7 +57,7 @@
     </div>
 
     <!-- Instagram Section -->
-    <div class="mt-24">
+    <div style="margin-top: 90px">
       <label for="insta-select" class="block text-lg font-semibold mb-2">Select Instagram Account:</label>
       <select id="insta-select" class="w-full p-3 border rounded-lg">
         <option value="17841468384967861">BizTorg</option>
