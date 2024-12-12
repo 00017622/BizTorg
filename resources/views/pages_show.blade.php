@@ -24,7 +24,7 @@
         Fetch Page Details
       </button>
       <button id="engagement-btn" class="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600">
-        Fetch Page Engagement
+        Fetch Page Posts and their engagement
       </button>
     </div>
 
@@ -92,41 +92,65 @@
   <script>
     const ACCESS_TOKEN = 'EAANaazjLaZCkBOZCTa2ZAkGA83XuMWgZB71z8TZCBV7QQ8X3lHaqynKtfRZC68S1zO3HvL3NXM2O3xvHbdnh8JMz2nzsW82jM5KQTADJfqd4KHxR5u4wQwvHlwWQ38ROAuMuCXbLIbLaOaacLet5ZCRobGe1jqYHZBfoY8clZAcE8m6uym8MOZA6QEuXqJ';
 
-    // Facebook Page Details Fetching
-    document.getElementById('fetch-btn').addEventListener('click', async () => {
-      const pageId = document.getElementById('page-select').value;
+// Variable to track the visibility state
+let isPageDataVisible = false;
 
-      try {
-        const response = await fetch(`https://graph.facebook.com/v17.0/${pageId}?fields=id,name,about,category,fan_count,website,phone,emails&access_token=${ACCESS_TOKEN}`);
+document.getElementById('fetch-btn').addEventListener('click', async () => {
+  const pageId = document.getElementById('page-select').value;
+  const pageDataDiv = document.getElementById('page-data');
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+  if (isPageDataVisible) {
+    // Hide the data if it's already visible
+    pageDataDiv.classList.add('hidden');
+    isPageDataVisible = false;
+    return;
+  }
 
-        const pageData = await response.json();
-        const tableBody = document.getElementById('page-table-body');
-        tableBody.innerHTML = `
-          <tr><td class="border border-gray-300 p-2">ID</td><td class="border border-gray-300 p-2">${pageData.id}</td></tr>
-          <tr><td class="border border-gray-300 p-2">Name</td><td class="border border-gray-300 p-2">${pageData.name}</td></tr>
-          <tr><td class="border border-gray-300 p-2">About</td><td class="border border-gray-300 p-2">${pageData.about || 'N/A'}</td></tr>
-          <tr><td class="border border-gray-300 p-2">Category</td><td class="border border-gray-300 p-2">${pageData.category}</td></tr>
-          <tr><td class="border border-gray-300 p-2">Fan Count</td><td class="border border-gray-300 p-2">${pageData.fan_count || 'N/A'}</td></tr>
-          <tr><td class="border border-gray-300 p-2">Website</td><td class="border border-gray-300 p-2">${pageData.website || 'N/A'}</td></tr>
-          <tr><td class="border border-gray-300 p-2">Phone</td><td class="border border-gray-300 p-2">${pageData.phone || 'N/A'}</td></tr>
-          <tr><td class="border border-gray-300 p-2">Emails</td><td class="border border-gray-300 p-2">${(pageData.emails || []).join(', ') || 'N/A'}</td></tr>
-        `;
+  try {
+    const response = await fetch(`https://graph.facebook.com/v17.0/${pageId}?fields=id,name,about,category,fan_count,website,phone,emails&access_token=${ACCESS_TOKEN}`);
 
-        document.getElementById('page-data').classList.remove('hidden');
-      } catch (error) {
-        console.error('Error fetching Facebook page details:', error);
-        alert('Failed to fetch Facebook page details. Please check your access token.');
-      }
-    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const pageData = await response.json();
+    const tableBody = document.getElementById('page-table-body');
+    tableBody.innerHTML = `
+      <tr><td class="border border-gray-300 p-2">ID</td><td class="border border-gray-300 p-2">${pageData.id}</td></tr>
+      <tr><td class="border border-gray-300 p-2">Name</td><td class="border border-gray-300 p-2">${pageData.name}</td></tr>
+      <tr><td class="border border-gray-300 p-2">About</td><td class="border border-gray-300 p-2">${pageData.about || 'N/A'}</td></tr>
+      <tr><td class="border border-gray-300 p-2">Category</td><td class="border border-gray-300 p-2">${pageData.category}</td></tr>
+      <tr><td class="border border-gray-300 p-2">Fan Count</td><td class="border border-gray-300 p-2">${pageData.fan_count || 'N/A'}</td></tr>
+      <tr><td class="border border-gray-300 p-2">Website</td><td class="border border-gray-300 p-2">${pageData.website || 'N/A'}</td></tr>
+      <tr><td class="border border-gray-300 p-2">Phone</td><td class="border border-gray-300 p-2">${pageData.phone || 'N/A'}</td></tr>
+      <tr><td class="border border-gray-300 p-2">Emails</td><td class="border border-gray-300 p-2">${(pageData.emails || []).join(', ') || 'N/A'}</td></tr>
+    `;
+
+    // Show the data and update visibility state
+    pageDataDiv.classList.remove('hidden');
+    isPageDataVisible = true;
+  } catch (error) {
+    console.error('Error fetching Facebook page details:', error);
+    alert('Failed to fetch Facebook page details. Please check your access token.');
+  }
+});
+
 
     // Facebook Engagement Fetching
-    document.getElementById('engagement-btn').addEventListener('click', async () => {
+    let isEngagementDataVisible = false;
+
+document.getElementById('engagement-btn').addEventListener('click', async () => {
   const pageId = document.getElementById('page-select').value;
   const PAGE_TOKEN = 'EAANaazjLaZCkBOZCWEatHpYio5jkCNky0pMYSJYH0DFXvwl0cXjkQZBOwXW6WLcMtQD2A33H8EpNryMLzFXyxXElbWP1X57UGCi0t6MfGi6bB7KgKWikxZB26udZAJicDFZBHsiBiBZBp79qAuOMV7U5qyeBh85AlWZBK8OT6WzYqRgYKfzr4euSGssZApvCQNxaW';
+
+  const engagementDataDiv = document.getElementById('engagement-data');
+
+  if (isEngagementDataVisible) {
+    // Hide the engagement data if it's currently visible
+    engagementDataDiv.classList.add('hidden');
+    isEngagementDataVisible = false;
+    return;
+  }
 
   try {
     const response = await fetch(
@@ -152,7 +176,9 @@
       `;
     });
 
-    document.getElementById('engagement-data').classList.remove('hidden');
+    // Show the engagement data and update visibility state
+    engagementDataDiv.classList.remove('hidden');
+    isEngagementDataVisible = true;
   } catch (error) {
     console.error('Error fetching Facebook engagement:', error);
     alert('Failed to fetch Facebook engagement. Please check your access token.');
@@ -160,64 +186,90 @@
 });
 
 
+
     // Instagram Details Fetching
-    document.getElementById('insta-btn').addEventListener('click', async () => {
-      const instaId = document.getElementById('insta-select').value;
+    let isInstaDataVisible = false;
 
-      try {
-        const response = await fetch(`https://graph.facebook.com/v17.0/${instaId}?fields=username,media_count,followers_count,follows_count,profile_picture_url&access_token=${ACCESS_TOKEN}`);
+document.getElementById('insta-btn').addEventListener('click', async () => {
+  const instaId = document.getElementById('insta-select').value;
+  const instaDataDiv = document.getElementById('insta-data');
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+  if (isInstaDataVisible) {
+    // Hide Instagram data if currently visible
+    instaDataDiv.classList.add('hidden');
+    isInstaDataVisible = false;
+    return;
+  }
 
-        const instaData = await response.json();
+  try {
+    const response = await fetch(`https://graph.facebook.com/v17.0/${instaId}?fields=username,media_count,followers_count,follows_count,profile_picture_url&access_token=${ACCESS_TOKEN}`);
 
-        document.getElementById('insta-profile-picture').src = instaData.profile_picture_url;
-        document.getElementById('insta-username').textContent = `Instagram Account: @${instaData.username}`;
-        document.getElementById('insta-media-count').textContent = instaData.media_count;
-        document.getElementById('insta-followers').textContent = instaData.followers_count;
-        document.getElementById('insta-following').textContent = instaData.follows_count;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-        document.getElementById('insta-data').classList.remove('hidden');
-      } catch (error) {
-        console.error('Error fetching Instagram details:', error);
-        alert('Failed to fetch Instagram details. Please check your access token.');
-      }
+    const instaData = await response.json();
+
+    document.getElementById('insta-profile-picture').src = instaData.profile_picture_url;
+    document.getElementById('insta-username').textContent = `Instagram Account: @${instaData.username}`;
+    document.getElementById('insta-media-count').textContent = instaData.media_count;
+    document.getElementById('insta-followers').textContent = instaData.followers_count;
+    document.getElementById('insta-following').textContent = instaData.follows_count;
+
+    // Show the Instagram data and update visibility state
+    instaDataDiv.classList.remove('hidden');
+    isInstaDataVisible = true;
+  } catch (error) {
+    console.error('Error fetching Instagram details:', error);
+    alert('Failed to fetch Instagram details. Please check your access token.');
+  }
+});
+
+
+let areInstaPostsVisible = false;
+
+document.getElementById('insta-posts-btn').addEventListener('click', async () => {
+  const instaId = document.getElementById('insta-select').value;
+  const instaPostsDiv = document.getElementById('insta-posts');
+
+  if (areInstaPostsVisible) {
+    // Hide Instagram posts if currently visible
+    instaPostsDiv.classList.add('hidden');
+    areInstaPostsVisible = false;
+    return;
+  }
+
+  try {
+    const response = await fetch(`https://graph.facebook.com/v17.0/${instaId}/media?fields=id,media_type,media_url,caption,timestamp&access_token=${ACCESS_TOKEN}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const postsData = await response.json();
+    const postsList = document.getElementById('insta-posts-list');
+    postsList.innerHTML = ''; // Clear previous posts
+
+    postsData.data.forEach(post => {
+      const postElement = document.createElement('div');
+      postElement.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow');
+      postElement.innerHTML = `
+        <p><strong>Caption:</strong> ${post.caption || 'No Caption'}</p>
+        <p><strong>Posted On:</strong> ${new Date(post.timestamp).toLocaleString()}</p>
+        <img class="w-full mt-2" src="${post.media_url}" alt="Instagram Post Image" />
+      `;
+      postsList.appendChild(postElement);
     });
 
-    // Instagram Posts Fetching
-    document.getElementById('insta-posts-btn').addEventListener('click', async () => {
-      const instaId = document.getElementById('insta-select').value;
+    // Show the Instagram posts and update visibility state
+    instaPostsDiv.classList.remove('hidden');
+    areInstaPostsVisible = true;
+  } catch (error) {
+    console.error('Error fetching Instagram posts:', error);
+    alert('Failed to fetch Instagram posts. Please check your access token.');
+  }
+});
 
-      try {
-        const response = await fetch(`https://graph.facebook.com/v17.0/${instaId}/media?fields=id,media_type,media_url,caption,timestamp&access_token=${ACCESS_TOKEN}`);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const postsData = await response.json();
-        const postsList = document.getElementById('insta-posts-list');
-        postsList.innerHTML = '';
-
-        postsData.data.forEach(post => {
-          const postElement = document.createElement('div');
-          postElement.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow');
-          postElement.innerHTML = `
-            <p><strong>Caption:</strong> ${post.caption || 'No Caption'}</p>
-            <p><strong>Posted On:</strong> ${new Date(post.timestamp).toLocaleString()}</p>
-            <img class="w-full mt-2" src="${post.media_url}" alt="Instagram Post Image" />
-          `;
-          postsList.appendChild(postElement);
-        });
-
-        document.getElementById('insta-posts').classList.remove('hidden');
-      } catch (error) {
-        console.error('Error fetching Instagram posts:', error);
-        alert('Failed to fetch Instagram posts. Please check your access token.');
-      }
-    });
   </script>
 </body>
 </html>
