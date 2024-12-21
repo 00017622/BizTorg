@@ -4,11 +4,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Helper function for delay
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Define __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper function to download an image
 const downloadImage = async (url, outputPath) => {
     const response = await fetch(url);
     if (!response.ok) {
@@ -23,14 +26,15 @@ const downloadImage = async (url, outputPath) => {
     const args = process.argv.slice(2);
     const productName = args[0];
     const productDescription = args[1];
-    const imageUrls = args.slice(2);
+    const imageUrls = args.slice(2); // Pass URLs instead of local paths
 
     const browser = await puppeteer.launch({
-        headless: true, // Set to true for production
+        headless: false,
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Path to your local Chrome browser
     });
 
     const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultNavigationTimeout(60000); // Set navigation timeout to 60 seconds
 
     try {
         console.log('Navigating to Buffer login page...');
@@ -57,15 +61,12 @@ const downloadImage = async (url, outputPath) => {
         if (imageUrls.length > 0) {
             console.log('Uploading images...');
             const fileInputSelector = 'input[data-testid="uploads-dropzone-input"]';
-
             for (const imageUrl of imageUrls) {
+                // Download the image locally
                 const localImagePath = path.resolve(__dirname, 'temp_image.jpg');
                 await downloadImage(imageUrl, localImagePath);
 
-                if (!fs.existsSync(localImagePath)) {
-                    throw new Error(`File does not exist: ${localImagePath}`);
-                }
-
+                // Upload the downloaded image
                 const inputHandle = await page.$(fileInputSelector);
                 if (inputHandle) {
                     await inputHandle.uploadFile(localImagePath);
@@ -74,8 +75,11 @@ const downloadImage = async (url, outputPath) => {
                     throw new Error('File input not found');
                 }
 
+                // Remove the temporary image file
                 fs.unlinkSync(localImagePath);
-                await delay(20000); // Extended delay
+
+                // Allow time for Buffer to process the uploaded image
+                await delay(15000);
             }
         }
 
@@ -90,7 +94,7 @@ const downloadImage = async (url, outputPath) => {
         await page.click(shareNowSelector);
 
         console.log('Waiting for Buffer to process...');
-        await delay(20000);
+        await delay(15000); // Allow time for processing
 
         console.log('Post shared successfully!');
     } catch (error) {
