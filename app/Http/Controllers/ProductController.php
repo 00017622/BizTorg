@@ -71,6 +71,7 @@ class ProductController extends Controller
 
 public function createProduct(Request $request)
 {
+    // Validation
     $validatedData = $request->validate([
         'name' => 'required|string|max:255',
         'description' => 'required|string|max:900',
@@ -93,6 +94,7 @@ public function createProduct(Request $request)
 
     try {
         DB::transaction(function () use ($validatedData, $request, $slug) {
+            // Create the product
             $product = Product::create([
                 'name' => $validatedData['name'],
                 'slug' => $slug,
@@ -107,170 +109,56 @@ public function createProduct(Request $request)
                 'user_id' => $request->user()->id,
             ]);
 
+            // Save product images
+            $imageUrls = [];
             foreach (['image1', 'image2', 'image3', 'image4'] as $imageField) {
                 if ($request->hasFile($imageField)) {
-                    try {
-                        $path = $request->file($imageField)->store('product-images', 'public');
-                        Log::info("Image uploaded successfully to: $path");
-            
-                        ProductImage::create([
-                            'product_id' => $product->id,
-                            'image_url' => $path,
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::error("Failed to upload image: " . $e->getMessage());
-                    }
-                } else {
-                    Log::warning("No file detected for: $imageField");
+                    // Store the image in the "public" disk
+                    $path = $request->file($imageField)->store('product-images', 'public');
+                    $publicUrl = asset("storage/$path"); // Publicly accessible URL for Puppeteer
+                    $imageUrls[] = $publicUrl;
+
+                    // Save image info to the database
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image_url' => $path,
+                    ]);
                 }
             }
-            
 
-            $product->attributeValues()->sync($validatedData['attributes']);
+            // Execute Puppeteer Script
+            if (!empty($imageUrls)) {
+                $scriptPath = base_path('scripts/postToSocial.js');
+                $escapedImageUrls = implode(' ', array_map('escapeshellarg', $imageUrls));
 
-            $productInfo = <<<INFO
-📢 <b>Объявление:</b> {$product->name}
+                $command = sprintf(
+                    'node %s %s %s %s',
+                    escapeshellarg($scriptPath),
+                    escapeshellarg($product->name),
+                    escapeshellarg($product->description),
+                    $escapedImageUrls
+                );
 
-📝 <b>Описание:</b> {$product->description}
+                Log::info("Executing Puppeteer script: $command");
 
-📍 <b>Регион:</b> {$product->region->parent->name}, {$product->region->name}
+                exec($command, $output, $returnVar);
 
-👤 <b>Контактное лицо:</b> {$product->user->name}
-
-📞 <b>Номер телефона:</b> <a href="tel:{$product->user->profile->phone}">{$product->user->profile->phone}</a>
-
-🌍 <b>Карта:</b> <a href="https://www.google.com/maps?q={$product->latitude},{$product->longitude}">Местоположение в Google Maps</a>
-
-🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm">Местоположение в Yandex Maps</a>
-
-
-🔗 <a href="https://biztorg.uz/obyavlenie/{$product->slug}">Подробнее по ссылке</a>
-INFO;
-
-
-               $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
-             
-                   $url = asset("storage/{$path}");
-                   Log::info("Constructed image URL: {$url}");
-                   return $url;
-               })->toArray();
-               
-
-        if (!is_array($images)) {
-            throw new \InvalidArgumentException('Images should be an array.');
-        }
-
-        try {
-            if (count($images) > 1) {
-                $media = array_map(function ($image, $index) use ($productInfo) {
-                    // Base array for each media item
-                    $mediaItem = [
-                        'type' => 'photo',
-                        'media' => $image,
-                        'parse_mode' => 'HTML',
-                    ];
-                    if ($index === 0) {
-                        $mediaItem['caption'] = $productInfo;
-                    }
-                    return $mediaItem;
-                }, $images, array_keys($images));
-                
-                $this->telegramService->sendMediaGroup($media);
-            } elseif (count($images) === 1) {
-                Log::info("Sending single photo to Telegram: " . $images[0]);
-                $this->telegramService->sendPhoto($images[0], $productInfo);
-            } else {
-                $this->telegramService->sendMessage($productInfo);
+                if ($returnVar !== 0) {
+                    Log::error('Failed to execute Puppeteer script: ' . implode("\n", $output));
+                } else {
+                    Log::info('Puppeteer script executed successfully: ' . implode("\n", $output));
+                }
             }
-        } catch (\Exception $e) {
-            Log::error("Failed to send Telegram message: " . $e->getMessage());
-        }
-        
-        try {
+        });
 
-            $facebookProductInfo = <<<INFO
-📢 Объявление: {$product->name}
-
-📝 Описание: {$product->description}
-
-📍 Регион: {$product->region->parent->name}, {$product->region->name}
-
-👤 Контактное лицо: {$product->user->name}
-
-📞 Номер телефона: {$product->user->profile->phone}
-
-🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-
-🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
-
-🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
-INFO;
-
-        $imagesForFacebook = ProductImage::where('product_id', $product->id)->get()->map(function ($image) {
-            $path = str_replace('\\', '/', $image->image_url);
-            return [
-                'id' => $image->id,
-                'image_url' => asset("storage/{$path}"), 
-            ];
-        })->toArray();
-
-        
-        
-        $this->facebookService->createPost($facebookProductInfo, $imagesForFacebook);
-
-            
-        } catch (\Exception $e) {
-            Log::error("Failed to send Facebook post" . $e->getMessage());
-        }
-
-        try {
-        
-            $productImagesUrls = ProductImage::where('product_id', $product->id)->pluck('image_url');
-            $imagesUrls = [];
-
-            foreach ($productImagesUrls as $productImageUrl) {
-                $imagesUrls[] = asset("storage/{$productImageUrl}");
-            }
-        
-            // Construct the Instagram message
-            $region = $product->region->parent->name ?? 'Unknown Region';
-            $subregion = $product->region->name ?? 'Unknown Subregion';
-            $phone = $product->user->profile->phone ?? 'No Phone Number Provided';
-        
-            $instaMessage = "
-            📢 Объявление: {$product->name}
-        
-            📝 Описание: {$product->description}
-        
-            📍 Регион: {$region}, {$subregion}
-        
-            👤 Контактное лицо: {$product->user->name}
-        
-            📞 Номер телефона: {$phone}
-        
-            🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-        
-            🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
-        
-            🔗 Подробнее по ссылке: https://biztorg/obyavlenie/{$product->slug}
-            ";
-        
-            // Send to Instagram
-            $this->instagramService->createCarouselPost($instaMessage, $imagesUrls);
-        
-        } catch (\Exception $e) {
-            Log::error("Failed to send Instagram post: " . $e->getMessage());
-        }
-        
-        
-       
-    });
         return redirect(route('profile.products'))->with('success', 'Product created successfully!');
     } catch (\Exception $e) {
         Log::error('Product creation failed: ' . $e->getMessage());
         return redirect()->back()->with('error', 'An error occurred while creating the product. Please try again.');
     }
 }
+
+
 
 
 
