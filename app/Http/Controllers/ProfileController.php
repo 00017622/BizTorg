@@ -14,9 +14,6 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
         $profile = $request->user()->profile;
@@ -44,30 +41,24 @@ class ProfileController extends Controller
         'longitude' => 'required|numeric|between:-180,180',
     ]);
 
-    // Update the user's basic info
     $request->user()->update([
         'name' => $validatedData['name'],
         'email' => $validatedData['email'],
     ]);
 
-    // Reset email verification if email is updated
     if ($request->user()->isDirty('email')) {
         $request->user()->email_verified_at = null;
     }
 
-    // Handle avatar upload
-    $avatarPath = $request->user()->profile->avatar ?? null; // Keep the current avatar if no new file is uploaded
+    $avatarPath = $request->user()->profile->avatar ?? null;
     if ($request->hasFile('avatar')) {
-        // Delete old avatar if exists
         if ($avatarPath && Storage::exists('public/' . $avatarPath)) {
             Storage::delete('public/' . $avatarPath);
         }
 
-        // Store new avatar
         $avatarPath = $request->file('avatar')->store('avatars', 'public');
     }
 
-    // Use updateOrCreate for the profile
     $request->user()->profile()->updateOrCreate(
         ['user_id' => $request->user()->id],
         [
@@ -83,11 +74,6 @@ class ProfileController extends Controller
     return Redirect::route('profile.view')->with('status', 'profile-updated');
 }
 
-
-
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
@@ -154,17 +140,14 @@ class ProfileController extends Controller
             'avatar' => 'nullable|image|max:2048',
         ]);
     
-        // Handle avatar upload if present
         if ($request->hasFile('avatar')) {
             $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
         } else {
-            $validated['avatar'] = null; // Default to null if no file is uploaded
+            $validated['avatar'] = null; 
         }
     
-        // Create the profile
         Profile::create($validated);
     
-        // Redirect with a success message
         return redirect()->route('profile.view')->with('status', 'profile-created');
     }
     

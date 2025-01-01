@@ -26,11 +26,12 @@ const downloadImage = async (url, outputPath) => {
     const imageUrls = args.slice(2);
 
     const browser = await puppeteer.launch({
-        headless: true, // Set to true for production
+        headless: false,
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 
     });
 
     const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultNavigationTimeout(60000); 
 
     try {
         console.log('Navigating to Buffer login page...');
@@ -57,14 +58,9 @@ const downloadImage = async (url, outputPath) => {
         if (imageUrls.length > 0) {
             console.log('Uploading images...');
             const fileInputSelector = 'input[data-testid="uploads-dropzone-input"]';
-
             for (const imageUrl of imageUrls) {
                 const localImagePath = path.resolve(__dirname, 'temp_image.jpg');
                 await downloadImage(imageUrl, localImagePath);
-
-                if (!fs.existsSync(localImagePath)) {
-                    throw new Error(`File does not exist: ${localImagePath}`);
-                }
 
                 const inputHandle = await page.$(fileInputSelector);
                 if (inputHandle) {
@@ -73,9 +69,9 @@ const downloadImage = async (url, outputPath) => {
                 } else {
                     throw new Error('File input not found');
                 }
-
                 fs.unlinkSync(localImagePath);
-                await delay(20000); // Extended delay
+
+                await delay(15000);
             }
         }
 
@@ -90,7 +86,7 @@ const downloadImage = async (url, outputPath) => {
         await page.click(shareNowSelector);
 
         console.log('Waiting for Buffer to process...');
-        await delay(20000);
+        await delay(15000); 
 
         console.log('Post shared successfully!');
     } catch (error) {

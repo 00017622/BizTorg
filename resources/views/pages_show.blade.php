@@ -8,9 +8,7 @@
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-xl mx-auto">
-    <h1 class="text-2xl font-bold text-center mb-6">Facebook and Instagram Pages Showcase</h1>
-
-    <!-- Dropdown to Select Page -->
+    <h1 class="text-2xl font-bold text-center mb-6">Facebook and Instagram Pages Showcase</h1> 
     <div class="mb-4">
       <label for="page-select" class="block text-lg font-semibold mb-2">Select a Facebook Page:</label>
       <select id="page-select" class="w-full p-3 border rounded-lg">
@@ -18,7 +16,6 @@
       </select>
     </div>
 
-    <!-- Buttons to Fetch Data -->
     <div class="flex space-x-4 mb-6">
       <button id="fetch-btn" class="w-full bg-red-500 text-white p-3 rounded-lg font-semibold hover:bg-red-600">
         Fetch Page Details
@@ -28,7 +25,6 @@
       </button>
     </div>
 
-    <!-- Table to Display Page Details -->
     <div id="page-data" class="mt-6 hidden">
       <h2 class="text-xl font-bold mb-4">Facebook Page Details:</h2>
       <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg">
@@ -42,7 +38,6 @@
       </table>
     </div>
 
-    <!-- Table to Display Engagement Info -->
     <div id="engagement-data" class="mt-6 hidden">
       <h2 class="text-xl font-bold mb-4">Facebook Page Engagement:</h2>
       <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg">
@@ -56,7 +51,6 @@
       </table>
     </div>
 
-    <!-- Instagram Section -->
     <div style="margin-top: 90px">
       <label for="insta-select" class="block text-lg font-semibold mb-2">Select Instagram Account:</label>
       <select id="insta-select" class="w-full p-3 border rounded-lg">

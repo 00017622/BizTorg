@@ -20,7 +20,6 @@ class CurrencyService
 
                 $usdRate = preg_replace('/[^\d.]/', '', $usdRate);
 
-                // Cache the fetched rate
                 Cache::put('usd_rate', $usdRate, now()->addHours(12));
 
                 return trim($usdRate);
@@ -28,8 +27,6 @@ class CurrencyService
         } catch (\Exception $e) {
             Log::error("Failed to fetch USD rate: " . $e->getMessage());
         }
-
-        // Return the cached rate or a default message if unavailable
         return Cache::get('usd_rate', 'USD rate not available');
     }
 }

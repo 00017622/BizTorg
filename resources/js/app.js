@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const handleFavoriteToggle = function (event) {
-        // Prevent redirection when clicking the button
         event.stopPropagation();
         event.preventDefault();
 
