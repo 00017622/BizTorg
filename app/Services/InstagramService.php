@@ -13,7 +13,7 @@ class InstagramService {
 
     public function __construct()
     {
-        $this->accessToken = config('services.facebook.insta_access_token');
+        $this->accessToken = 'EAANaazjLaZCkBOzEm5FuSlIztFoU2bAc5xzadmovV87zAzMpuFmtBNRHwEVyVreIps0tiNPL8OxUsP89pclVmZB6JqVNDnNgnf0L9ZCLVuhXvnEId4qf3TIcQS3PXlL4Um8H3Ljj8P6EHZC4TMBGZByikgZBGajSBnYIxw1jZCe0sm2it2C1eZBUEV3mUI7lARVgL96nx4GzUQKF95cfY20ZD';
         $this->instagramAccountId = '17841468384967861';
         $this->defaultImage = 'https://brilliant24.ru/files/cat/template_01.png';
     }
@@ -77,9 +77,6 @@ class InstagramService {
 
     return $response->json();
 }
-
-
-
     protected function uploadImage(string $imageUrl): string
 {
     $url = "https://graph.facebook.com/v17.0/{$this->instagramAccountId}/media";
