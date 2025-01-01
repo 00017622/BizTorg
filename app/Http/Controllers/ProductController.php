@@ -163,7 +163,6 @@ INFO;
         try {
             if (count($images) > 1) {
                 $media = array_map(function ($image, $index) use ($productInfo) {
-                    // Base array for each media item
                     $mediaItem = [
                         'type' => 'photo',
                         'media' => $image,
@@ -232,7 +231,6 @@ INFO;
                 $imagesUrls[] = asset("storage/{$productImageUrl}");
             }
         
-            // Construct the Instagram message
             $region = $product->region->parent->name ?? 'Unknown Region';
             $subregion = $product->region->name ?? 'Unknown Subregion';
             $phone = $product->user->profile->phone ?? 'No Phone Number Provided';
@@ -255,7 +253,6 @@ INFO;
             🔗 Подробнее по ссылке: https://biztorg/obyavlenie/{$product->slug}
             ";
         
-            // Send to Instagram
             $this->instagramService->createCarouselPost($instaMessage, $imagesUrls);
         
         } catch (\Exception $e) {
@@ -326,13 +323,12 @@ public function fetchSingleProduct($id) {
         }
     ])->get();
     
-    // Map the attributes to the required structure
     $productAttributes = $attributes->mapWithKeys(function ($attribute) {
-        $selectedValue = $attribute->attributeValues->first(); // Get the selected value (if any)
+        $selectedValue = $attribute->attributeValues->first();
         return [
             $attribute->id => [
-                'id' => $selectedValue->id ?? null, // ID of the selected value
-                'name' => $selectedValue->value ?? 'No value assigned', // Name of the selected value
+                'id' => $selectedValue->id ?? null,
+                'name' => $selectedValue->value ?? 'No value assigned', 
             ],
         ];
     });
@@ -417,13 +413,10 @@ public function deleteImage($id)
 
         $image = ProductImage::findOrFail($id);
 
-
-        // Delete the file from storage
         if (Storage::exists('public/' . $image->image_url)) {
             Storage::delete('public/' . $image->image_url);
         }
 
-        // Remove the image record from the database
         $image->delete();
 
         return response()->json(['success' => true, 'message' => 'Image deleted successfully.']);

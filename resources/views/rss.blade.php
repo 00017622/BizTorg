@@ -10,7 +10,7 @@
 
         @foreach($products as $product)
             @php
-                // Preprocess map URLs
+                
                 $googleMapUrl = $product->latitude && $product->longitude 
                     ? "https://www.google.com/maps?q={$product->latitude},{$product->longitude}" 
                     : null;

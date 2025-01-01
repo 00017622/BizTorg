@@ -40,7 +40,6 @@ class InstagramService {
         throw new Exception("Failed to upload any images for Instagram carousel post.");
     }
 
-    // Publish the carousel post
     return $this->publishCarousel($creationIds, $caption);
 }
 
@@ -125,7 +124,7 @@ protected function createCarouselContainer(array $creationIds, string $caption):
     $response = Http::post($url, [
         'media_type' => 'CAROUSEL',
         'caption' => $caption,
-        'children' => $creationIds, // Array of media creation IDs
+        'children' => $creationIds,
         'access_token' => $this->accessToken,
     ]);
 
@@ -134,7 +133,7 @@ protected function createCarouselContainer(array $creationIds, string $caption):
         throw new Exception("Carousel container creation failed.");
     }
 
-    return $response->json()['id']; // Return the container creation_id
+    return $response->json()['id'];
 }
 
 

@@ -34,7 +34,6 @@ class CategoryController extends Controller
     $selectedCity = null;
     $regionChildren = collect();
 
-    // Start with a base query
     $productsQuery = Product::query();
     
     if ($category) {
@@ -56,7 +55,6 @@ class CategoryController extends Controller
         $attributeValues[$attribute->id] = $values;
     }
 
-    // Apply attribute filters
     $attributeFilters = Arr::except($request->query(), ['subcategory', 'currency', 'page', 'city', 'region', 'price_from', 'price_to', 'type', 'date_filter', 'with_images_only', 'search']);
 
     if (!empty($attributeFilters)) {
@@ -69,7 +67,6 @@ class CategoryController extends Controller
         }
     }
 
-    // Price filters
     if ($request->has('price_from') && $request->input('currency') === 'uzs') {
        $priceFrom = $request->input('price_from');
 
@@ -120,12 +117,10 @@ class CategoryController extends Controller
         });
     }
 
-    // Type filter
     if ($request->has('type')) {
         $productsQuery->where('type', $request->input('type'));
     }
 
-    // Date filter
     if ($request->has('date_filter')) {
         switch ($request->input('date_filter')) {
             case 'new':
@@ -140,12 +135,10 @@ class CategoryController extends Controller
         }
     }
 
-    // Filter for products with images only
     if ($request->has('with_images_only') && $request->input('with_images_only') === 'yes') {
         $productsQuery->whereHas('images');
     }
 
-    // Search filter
     if ($request->has('search')) {
         $input = $request->input('search');
         $inputArray = explode(' ', strtolower($input));
@@ -158,7 +151,6 @@ class CategoryController extends Controller
         });
     }
 
-    // Region filter
     if ($request->has('region')) {
         $selectedRegion = Region::where('slug', $request->input('region'))->first();
         if ($selectedRegion) {
@@ -169,7 +161,6 @@ class CategoryController extends Controller
         }
     }
 
-    // City filter
     if ($request->has('city')) {
         $selectedCity = Region::where('slug', $request->input('city'))->first();
         if ($selectedCity) {
@@ -177,7 +168,6 @@ class CategoryController extends Controller
         }
     }
 
-    // Paginate the results (10 items per page)
     $products = $productsQuery->paginate(1);
 
     return view('category', compact('category', 'user', 'usdRate', 'selectedCity', 'selectedRegion', 'regionChildren', 'products', 'mainRegions', 'selectedSubcategory', 'attributes', 'attributeValues'));
