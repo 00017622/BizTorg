@@ -8,6 +8,7 @@ use App\Http\Controllers\AttributeAttributeValueController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Auth;
 
 use function Pest\Laravel\post;
@@ -80,6 +81,8 @@ Route::get('/privacy-policy', function () {
 Route::get('/pages-facebook', function () {
     return view('pages_show');
 });
+
+Route::get('/sitemap.xml', [SitemapController::class, 'generateSitemap']);
 
 require __DIR__.'/auth.php';
 
