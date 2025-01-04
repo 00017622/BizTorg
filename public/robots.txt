@@ -1,2 +1,15 @@
 User-agent: *
-Disallow:
+Disallow: /products?sort=
+Disallow: /products?filter=
+Disallow: /products?subcategory=
+Disallow: /products?currency=
+Disallow: /products?price_from=
+Disallow: /products?price_to=
+Disallow: /products?type=
+Disallow: /products?date_filter=
+Disallow: /products?with_images_only=
+
+Allow: /products?search=
+
+# Sitemap for better crawling
+Sitemap: https://biztorg.uz/sitemap.xml
