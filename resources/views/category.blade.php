@@ -12,7 +12,7 @@
     <meta name="twitter:image" content="{{ $category->image_url ? asset('storage/' . $category->image_url) : asset('default.png') }}">
 @endsection
 
-@section('title', 'Категория: {{$category->name}} - {{$category->subcategory->name}}')
+@section('title', 'Категория: ' . $category->name . (isset($selectedSubcategory) ? ' - ' . $selectedSubcategory->name : ''))
 @extends('layouts.app')
 @section('main')
 @include('components.filters')
