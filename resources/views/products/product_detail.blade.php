@@ -164,7 +164,7 @@
             <div class="border rounded-lg overflow-hidden shadow-md bg-black border-gray-900 hover:shadow-lg transition-shadow">
                 <div class="relative">
                     <!-- Image -->
-                    <img src="{{ asset('storage/' . $userProduct->images->first()->image_url) }}" 
+                    <img src="{{ $userProduct->images->isNotEmpty() ? asset('storage/' . $userProduct->images->first()->image_url) : asset('default.png') }}" 
                          alt="{{ $userProduct->name }}" 
                          class="object-cover w-full transition-transform duration-300 ease-in-out transform hover:scale-105 h-[200px]">
                 </div>
