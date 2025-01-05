@@ -38,12 +38,13 @@
                 "url": "https://biztorg.uz/",
                 "sameAs": [
                     "https://www.facebook.com/profile.php?id=61570125598203",
-                    "https://www.instagram.com/biztorg/,
-                    "https://t.me/s/biztorguz",
+                    "https://www.instagram.com/biztorg/",
+                    "https://t.me/s/biztorguz"
                 ],
                 "image": "https://biztorg.uz/logo.jpg"
             }
             </script>
+            
 
         <!-- Fonts -->
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
