@@ -5,10 +5,40 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="description" content="BizTorgUz — бесплатная платформа для размещения объявлений. Покупайте и продавайте транспорт, недвижимость, электронику, товары для дома и сада. Размещайте услуги и предложения для бизнеса. Присоединяйтесь к крупнейшей базе объявлений в Узбекистане!">
+        <meta property="og:title" content="BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом" />
+        <meta property="og:description" content="BizTorgUz — бесплатная платформа для размещения объявлений. Покупайте и продавайте транспорт, недвижимость, электронику, товары для дома и сада. Размещайте услуги и предложения для бизнеса. Присоединяйтесь к крупнейшей базе объявлений в Узбекистане!" />
+        <meta property="og:url" content="https://biztorg.uz/" />
+        <meta property="og:image" content="https://biztorg.uz/logo.jpg" />
+        <meta property="og:type" content="website" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом" />
+        <meta name="twitter:description" content="BizTorgUz — бесплатная платформа для размещения объявлений. Покупайте и продавайте транспорт, недвижимость, электронику, товары для дома и сада. Размещайте услуги и предложения для бизнеса. Присоединяйтесь к крупнейшей базе объявлений в Узбекистане!" />
+        <meta name="twitter:image" content="https://biztorg.uz/logo.jpg" />
+
+        <link rel="icon" type="image/png" href="/my-favicon/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/my-favicon/favicon.svg" />
+        <link rel="shortcut icon" href="/my-favicon/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/my-favicon/apple-touch-icon.png" />
+        <link rel="manifest" href="/my-favicon/site.webmanifest" />
 
         @yield('meta')
 
-        <title>@yield('title', 'BizTorg')</title>
+        <title>@yield('title', 'BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом')</title>
+
+        <link rel="icon" href="https://biztorg.uz/logo.jpg" type="image/x-icon">
+
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebPage",
+                "name": "BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом",
+                "description": "BizTorgUz — бесплатная платформа для размещения объявлений. Покупайте и продавайте транспорт, недвижимость, электронику, товары для дома и сада. Размещайте услуги и предложения для бизнеса. Присоединяйтесь к крупнейшей базе объявлений в Узбекистане!",
+                "url": "https://biztorg.uz/",
+                "image": "https://biztorg.uz/logo.jpg"
+            }
+            </script>
 
         <!-- Fonts -->
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
