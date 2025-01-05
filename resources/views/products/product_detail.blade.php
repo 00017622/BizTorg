@@ -14,7 +14,7 @@
 
 
 
-@section('title', 'Обьявление: {{$product->name}}')
+@section('title', 'Обьявление: ' . $product->name . ' - ' . $product->subcategory->name)
 
 @extends('layouts.app')
 
