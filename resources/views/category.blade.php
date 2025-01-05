@@ -4,7 +4,7 @@
     <meta property="og:title" content="Категория: {{ $category->name }}">
     <meta property="og:description" content="Категория: {{ $category->name . ' - ' . $category->slug }}">
     <meta property="og:image" content="{{ $category->image_url ? asset('storage/' . $category->image_url) : asset('default.png') }}">
-    <meta property="og:url" content="{{ route('category.index', $category->slug) }}">
+    <meta property="og:url" content="{{ route('category.show', $category->slug) }}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Категория: {{ $category->name }}">
