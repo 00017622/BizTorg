@@ -1,23 +1,20 @@
-{{-- @section('meta')
-    <meta property="og:title" content="{{ $product->name }} - 💰 {{ $product->price }} {{ $product->currency == 'доллар' ? 'y.e' : 'сум' }} - 📞 {{ $product->user->profile->phone }} - 🌍 {{ $product->region->parent->name }}, {{ $product->region->name }}/>
-    <meta property="og:description" content="
-        📝 Описание: {{ $product->description }}
-        💰 Цена: {{ $product->price }} {{ $product->currency == 'доллар' ? 'y.e' : 'сум' }}
-        🌍 Регион: {{ $product->region->parent->name }}, {{ $product->region->name }}
-        👤 Контактное лицо: {{ $product->user->name }}
-        📞 Номер телефона: {{ $product->user->profile->phone }}
-        {{ isset($googleMapUrl) ? '🗺️ Карта (Google): ' . $googleMapUrl : '' }}
-        {{ isset($yandexMapUrl) ? '🗺️ Карта (Yandex): ' . $yandexMapUrl : '' }}
-    " />
-    <meta property="og:image" content="{{ asset('storage/' . $product->images->first()->image_url) }}" />
-    <meta property="og:image:width" content="400">
-    <meta property="og:image:height" content="400">
-    <meta property="og:url" content="{{ url('/obyavlenie/' . $product->slug) }}" />
-    <meta property="og:type" content="article" />
-@endsection --}}
+@section('meta')
+    <meta name="description" content="{{ Str::limit(strip_tags($product->description), 160) }}">
+    <meta name="keywords" content="{{ $product->name }}, {{ $product->subcategory->name }}, {{ $product->price }} {{ $product->currency === 'доллар' ? '$' : 'сум' }}">
+    <meta property="og:title" content="Обьявление: {{ $product->name }}">
+    <meta property="og:description" content="{{ Str::limit(strip_tags($product->description), 160) }}">
+    <meta property="og:image" content="{{ $product->images->isNotEmpty() ? asset('storage/' . $product->images->first()->image_url) : asset('default.png') }}">
+    <meta property="og:url" content="{{ route('product.get', $product->slug) }}">
+    <meta property="og:type" content="product">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Обьявление: {{ $product->name }}">
+    <meta name="twitter:description" content="{{ Str::limit(strip_tags($product->description), 160) }}">
+    <meta name="twitter:image" content="{{ $product->images->isNotEmpty() ? asset('storage/' . $product->images->first()->image_url) : asset('default.png') }}">
+@endsection
 
 
-@section('title', 'Обьявление: {{$product->name}}')
+
+@section('title', 'Обьявление: {{$product->name}} - {{$product->subcategory->name}}')
 
 @extends('layouts.app')
 
