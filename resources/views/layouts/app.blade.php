@@ -9,13 +9,15 @@
         <meta property="og:title" content="BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом" />
         <meta property="og:description" content="BizTorgUz — бесплатная платформа для размещения объявлений. Покупайте и продавайте транспорт, недвижимость, электронику, товары для дома и сада. Размещайте услуги и предложения для бизнеса. Присоединяйтесь к крупнейшей базе объявлений в Узбекистане!" />
         <meta property="og:url" content="https://biztorg.uz/" />
-        <meta property="og:image" content="https://biztorg.uz/logo.jpg" />
+        <meta property="og:image" content="https://biztorg.uz/logo.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:type" content="website" />
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом" />
         <meta name="twitter:description" content="BizTorgUz — бесплатная платформа для размещения объявлений. Покупайте и продавайте транспорт, недвижимость, электронику, товары для дома и сада. Размещайте услуги и предложения для бизнеса. Присоединяйтесь к крупнейшей базе объявлений в Узбекистане!" />
-        <meta name="twitter:image" content="https://biztorg.uz/logo.jpg" />
+        <meta name="twitter:image" content="https://biztorg.uz/logo.png" />
 
         <link rel="icon" type="image/png" href="/my-favicon/favicon-96x96.png" sizes="96x96" />
         <link rel="icon" type="image/svg+xml" href="/my-favicon/favicon.svg" />
@@ -27,7 +29,7 @@
 
         <title>@yield('title', 'BizTorgUz - Бесплатная доска обьявлений: Транспорт, Недвижимость, Электроника, Услуги и Дом')</title>
 
-        <link rel="icon" href="https://biztorg.uz/logo.jpg" type="image/x-icon">
+        <link rel="icon" href="https://biztorg.uz/logo.png" type="image/x-icon">
 
         <script type="application/ld+json">
             {
@@ -41,7 +43,7 @@
                     "https://www.instagram.com/biztorg/",
                     "https://t.me/s/biztorguz"
                 ],
-                "image": "https://biztorg.uz/logo.jpg"
+                "image": "https://biztorg.uz/logo.png"
             }
             </script>
             
