@@ -10,5 +10,6 @@ Disallow: /products?date_filter=
 Disallow: /products?with_images_only=
 
 Allow: /products?search=
+Allow: /category/
 
 Sitemap: https://biztorg.uz/sitemap.xml
