@@ -11,5 +11,4 @@ Disallow: /products?with_images_only=
 
 Allow: /products?search=
 
-# Sitemap for better crawling
 Sitemap: https://biztorg.uz/sitemap.xml

@@ -12,6 +12,7 @@
         "laravel/tinker": "^2.9",
         "socialiteproviders/manager": "*",
         "socialiteproviders/telegram": "*",
+        "spatie/laravel-sitemap": "^7.3",
         "symfony/css-selector": "^7.1",
         "symfony/dom-crawler": "^7.1",
         "tcg/voyager": "^1.8"
