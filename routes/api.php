@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\RegionsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/hello', function () {
@@ -19,3 +20,6 @@ Route::get('/v1/{categoryId}/subcategories', [CategoryController::class, 'fetchS
 Route::get('/v1/{subcategoryId}/products', [ProductController::class, 'getProducts']);
 
 Route::get('v1/{subcategoryId}/attributes', [ProductController::class, 'getFilteredProducts']);
+
+Route::get('/v1/regions', [RegionsController::class, 'fetchRegions']);
+Route::get('/v1/{parentRegionId}/child_regions', [RegionsController::class, 'fetchChildRegions']);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Attribute;
 use App\Models\Product;
+use App\Models\Region;
 use App\Models\Subcategory;
 use Exception;
 use Illuminate\Support\Facades\Log;
