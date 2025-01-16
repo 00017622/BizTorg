@@ -61,7 +61,7 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/favorites/toggle', [ProfileController::class, 'toggleFavorites'])->name('favorites.toggle');
 
-Route::middleware('auth')->group( function () {
+Route::middleware('auth')->group(function () {
     Route::post('/product/store', [ProductController::class, 'createProduct'])->name('products.store');
     Route::put('/product/edit', [ProductController::class, 'editProduct'])->name('products.update');
     Route::get('product/fetch/{id}', [ProductController::class, 'fetchSingleProduct'])->name('product.get.edit');
@@ -69,7 +69,6 @@ Route::middleware('auth')->group( function () {
     Route::get('/product/add', [ProductController::class, 'fetchProductAttributes'])->name('product.fetch');
     Route::get('/regions/parents', [ProductController::class, 'getParentRegions']);
     Route::get('/regions/children/{parentId}', [ProductController::class, 'getChildRegions']);
-
 });
 
 Route::get('/obyavlenie/{slug}', [ProductController::class, 'getProduct'])->name('product.get');
@@ -84,13 +83,14 @@ Route::get('/pages-facebook', function () {
 
 Route::get('/sitemap.xml', [SitemapController::class, 'generateSitemap']);
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 use App\Models\Product;
+use TCG\Voyager\Facades\Voyager;
 
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 
     Route::post('attribute-attribute-values', [AttributeAttributeValueController::class, 'store'])
-    ->name('voyager.attribute-attribute-values.store');
+        ->name('voyager.attribute-attribute-values.store');
 });
