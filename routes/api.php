@@ -30,3 +30,14 @@ Route::post('v1/auth/login/', [CustomLoginController::class, 'login']);
 
 Route::get('/v1/regions', [RegionsController::class, 'fetchRegions']);
 Route::get('/v1/{parentRegionId}/child_regions', [RegionsController::class, 'fetchChildRegions']);
+
+
+Route::get('/v1/filter-products/', [ProductController::class, 'filterProducts']);
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile/{id}', [ProfileController::class, 'getUserDataJson']);
+    Route::post('/profile/create', [ProfileController::class, 'storeProfile']);
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile']);
+    Route::delete('/profile/delete', [ProfileController::class, 'deleteProfile']);
+});
+
