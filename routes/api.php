@@ -40,4 +40,3 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/update', [ProfileController::class, 'updateProfile']);
     Route::delete('/profile/delete', [ProfileController::class, 'deleteProfile']);
 });
-
