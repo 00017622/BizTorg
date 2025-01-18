@@ -25,6 +25,8 @@ Route::get('v1/{subcategoryId}/attributes', [ProductController::class, 'getFilte
 Route::get('/v1/regions', [RegionsController::class, 'fetchRegions']);
 Route::get('/v1/{parentRegionId}/child_regions', [RegionsController::class, 'fetchChildRegions']);
 
+Route::get('/v1/filter-products/', [ProductController::class, 'filterProducts']);
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile/{id}', [ProfileController::class, 'getUserDataJson']);
     Route::post('/profile/create', [ProfileController::class, 'storeProfile']);
