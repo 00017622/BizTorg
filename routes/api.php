@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\CustomLoginController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RegionsController;
+use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/hello', function () {
@@ -29,4 +30,3 @@ Route::post('v1/auth/login/', [CustomLoginController::class, 'login']);
 
 Route::get('/v1/regions', [RegionsController::class, 'fetchRegions']);
 Route::get('/v1/{parentRegionId}/child_regions', [RegionsController::class, 'fetchChildRegions']);
-Route::get('/v1/filter-products/', [ProductController::class, 'filterProducts']);
