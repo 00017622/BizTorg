@@ -7,6 +7,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Profile;
 use App\Models\Region;
 use App\Models\User;
+use Cache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,95 +17,67 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function updateProfile(ProfileUpdateRequest $request)
-    {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $request->user()->id,
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:255',
-            'region_id' => 'nullable|exists:regions,id',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-        ]);
+    public function updateProfile(Request $request)
+{
+    $id = $request->input('uuid');
 
-        $request->user()->update([
-            'name' => $validatedData['name'],
-            'email' => $validatedData['email'],
-        ]);
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $avatarPath = $request->user()->profile->avatar ?? null;
-        if ($request->hasFile('avatar')) {
-            if ($avatarPath && Storage::exists('public/' . $avatarPath)) {
-                Storage::delete('public/' . $avatarPath);
-            }
-
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-        }
-
-        $request->user()->profile()->updateOrCreate(
-            ['user_id' => $request->user()->id],
-            [
-                'avatar' => $avatarPath,
-                'phone' => $validatedData['phone'],
-                'address' => $validatedData['address'],
-                'region_id' => $validatedData['region_id'],
-                'latitude' => $validatedData['latitude'],
-                'longitude' => $validatedData['longitude'],
-            ]
-        );
-
-        return response()->json(['message' => 'Profile updated']);
+    if (!is_numeric($id)) {
+        return response()->json(['error' => 'Invalid ID'], 400);
     }
 
-    public function deleteProfile($id)
-    {
-        $user = User::findOrFail($id);
-        $user->delete();
+    $validatedData = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => "required|email|max:255|unique:users,email,{$id}",
+        'phone' => 'required|string|max:20',
+        'address' => 'required|string|max:255',
+        'region_id' => 'nullable|exists:regions,id',
+    ]);
 
-        return response()->json(['message' => 'Лошара успешно удален']);
+    $user = User::findOrFail($id); 
+
+    $user->update([
+        'name' => $validatedData['name'],
+        'email' => $validatedData['email'],
+    ]);
+
+    if ($user->wasChanged('email')) {
+        $user->email_verified_at = null;
+        $user->save();
     }
 
-    public function getUserData(Request $request)
-    {
-        $user = $request->user();
-        $section = '';
-        return view('profile.userprofile', compact('user', 'section'));
-    }
+    $user->profile()->updateOrCreate(
+        ['user_id' => $user->id],
+        [
+            'phone' => $validatedData['phone'],
+            'address' => $validatedData['address'],
+            'region_id' => $validatedData['region_id'],
+        ]
+    );
+
+    Cache::forget("user_data_{$id}");
+
+    return response()->json(['message' => 'Profile updated'], 200);
+}
+
 
     public function getUserDataJson($id)
-    {
+{
+    $cacheKey = "user_data_{$id}";
+    $cacheDuration = 60 * 30; 
+
+    $userData = Cache::remember($cacheKey, $cacheDuration, function () use ($id) {
         $user = User::findOrFail($id);
-        return response()->json($user, 201);
-    }
+        $userProfile = Profile::where('user_id', $user->id)->firstOrFail();
+        $region = Region::where('id', $userProfile->region_id)->first();
 
+        return [
+            'user' => $user,
+            'user_profile' => $userProfile,
+            'region' => $region,
+        ];
+    });
 
-    public function storeProfile(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users',
-            'phone' => 'nullable|string|max:15',
-            'address' => 'nullable|string|max:255',
-            'region_id' => 'required|exists:regions,id',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'avatar' => 'nullable|image|max:2048',
-        ]);
+    return response()->json($userData);
+}
 
-        if ($request->hasFile('avatar')) {
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
-        } else {
-            $validated['avatar'] = null;
-        }
-
-        $profile = Profile::create($validated);
-
-        return response()->json(['message' => 'Profile created!', $profile]);
-    }
 }
