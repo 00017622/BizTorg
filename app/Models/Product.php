@@ -17,7 +17,12 @@ class Product extends Model
     }
 
     public function attributeValues() {
-        return $this->belongsToMany(AttributeValue::class, 'product_attribute_values');
+        return $this->belongsToMany(
+            AttributeValue::class,
+            'product_attribute_values',
+            'product_id', 
+            'attribute_value_id' 
+        );
     }
 
     public function images() {

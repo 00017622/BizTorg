@@ -13,3 +13,4 @@ Allow: /products?search=
 Allow: /category/
 
 Sitemap: https://biztorg.uz/sitemap.xml
+

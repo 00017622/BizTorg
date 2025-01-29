@@ -23,14 +23,19 @@ class SocialAuthController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
+                $user->update([
+                    'google_id' => $googleUser->getId(),
+                    'avatar' => $googleUser->getAvatar(),
+                ]);
                 Auth::login($user);
             } else {
                 $user = User::create([
                     'name' => $googleUser->getName(),
                     'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
                     'password' => bcrypt(Str::random(16)),
                     'avatar' => $googleUser->getAvatar(),
+                    'role_id' => 0,
                 ]);
 
                 Auth::login($user);

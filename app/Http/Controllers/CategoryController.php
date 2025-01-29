@@ -67,18 +67,42 @@ class CategoryController extends Controller
         }
     }
 
-    if ($request->has('price_from') && $request->input('currency') === 'uzs') {
-       $priceFrom = $request->input('price_from');
-
-       $productsQuery->where(function ($query) use ($priceFrom, $usdRate) {
-        $query->where(function ($q) use ($priceFrom) {
-            $q->where('currency', 'сум')->where('price', '>=', $priceFrom);
-        })
-        ->orWhere(function ($q) use($usdRate, $priceFrom) {
-            $q->where('currency', 'доллар')->where('price', '>=', $priceFrom / $usdRate);
+    if ($request->has('price_from') || $request->has('price_to')) {
+        $currency = $request->input('currency', 'usd');
+        if (!$usdRate || $usdRate <= 0) {
+            Log::info('USD Rate: USD rate not available');
+            $usdRate = 12900; 
+        }
+    
+        $priceFrom = round((float) $request->input('price_from', 0), 2);
+        $priceTo = round((float) $request->input('price_to', PHP_INT_MAX), 2);
+    
+        Log::info('Price From: ' . $priceFrom);
+        Log::info('Price To: ' . $priceTo);
+    
+        $productsQuery->where(function ($query) use ($priceFrom, $priceTo, $currency, $usdRate) {
+            $query->where(function ($q) use ($priceFrom, $priceTo, $currency, $usdRate) {
+                if ($currency === 'usd') {
+                    $q->where(function ($usdQuery) use ($priceFrom, $priceTo) {
+                        $usdQuery->where('currency', 'доллар')
+                                 ->whereBetween('price', [$priceFrom, $priceTo]);
+                    })->orWhere(function ($uzsQuery) use ($priceFrom, $priceTo, $usdRate) {
+                        $uzsQuery->where('currency', 'сум')
+                                 ->whereBetween('price', [$priceFrom * $usdRate, $priceTo * $usdRate]);
+                    });
+                } elseif ($currency === 'uzs') {
+                    $q->where(function ($uzsQuery) use ($priceFrom, $priceTo) {
+                        $uzsQuery->where('currency', 'сум')
+                                 ->whereBetween('price', [$priceFrom, $priceTo]);
+                    })->orWhere(function ($usdQuery) use ($priceFrom, $priceTo, $usdRate) {
+                        $usdQuery->where('currency', 'доллар')
+                                 ->whereBetween('price', [$priceFrom / $usdRate, $priceTo / $usdRate]);
+                    });
+                }
+            });
         });
-       });
     }
+    
 
     if ($request->has('price_from') && $request->input('currency') === 'usd') {
         $priceFrom = $request->input('price_from');
