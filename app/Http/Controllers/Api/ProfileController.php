@@ -67,9 +67,14 @@ class ProfileController extends Controller
 
     $userData = Cache::remember($cacheKey, $cacheDuration, function () use ($id) {
         $user = User::findOrFail($id);
-        $userProfile = Profile::where('user_id', $user->id)->firstOrFail();
-        $region = Region::where('id', $userProfile->region_id)->first();
 
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }    
+        
+        $userProfile = Profile::where('user_id', $id)->first();
+        $region = $userProfile ? Region::where('id', $userProfile->region_id)->first() : null;
+        
         return [
             'user' => $user,
             'user_profile' => $userProfile,
