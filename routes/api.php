@@ -33,6 +33,7 @@ Route::get('/v1/{parentRegionId}/child_regions', [RegionsController::class, 'fet
 
 
 Route::get('/v1/filter-products/', [ProductController::class, 'filterProducts']);
+Route::post('/v1/product/create', [ProductController::class, 'createProduct']);
 
     Route::get('/v1/profile/{id}', [ProfileController::class, 'getUserDataJson']);
     Route::post('/v1/profile/update', [ProfileController::class, 'updateProfile']);
