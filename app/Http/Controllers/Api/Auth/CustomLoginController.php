@@ -86,6 +86,7 @@ class CustomLoginController extends Controller {
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'name' => 'Имя и фамилия',
+            'role_id' => '0',
         ]);
 
         $token = $createdUser->createToken('Auth-Api')->plainTextToken;
