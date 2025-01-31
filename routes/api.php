@@ -8,14 +8,6 @@ use App\Http\Controllers\Api\RegionsController;
 use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/hello', function () {
-    return response()->json(
-        ['message' => 'hello'],
-    );
-});
-
-Route::get('/v1/categories', [CategoryController::class, 'allCategories']);
-
 Route::get('/v1/categories', [CategoryController::class, 'allCategories']);
 
 Route::get('/v1/{categoryId}/subcategories', [CategoryController::class, 'fetchSubcategories']);
@@ -33,8 +25,9 @@ Route::get('/v1/{parentRegionId}/child_regions', [RegionsController::class, 'fet
 
 
 Route::get('/v1/filter-products/', [ProductController::class, 'filterProducts']);
-Route::post('/v1/product/create', [ProductController::class, 'createProduct']);
 
 Route::get('/v1/profile/{id}', [ProfileController::class, 'getUserDataJson']);
 Route::post('/v1/profile/update', [ProfileController::class, 'updateProfile']);
+
+Route::post('/v1/product/create', [ProductController::class, 'createProduct']);
 

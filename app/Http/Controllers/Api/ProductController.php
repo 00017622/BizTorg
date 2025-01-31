@@ -175,7 +175,14 @@ class ProductController extends Controller {
     }
 
     public function createProduct(Request $request) {
+
+        Log::info("🔥 Incoming Request: ", [
+            'headers' => $request->headers->all(),
+            'body' => $request->all()
+        ]);
+
         $validatedData = $request->validate([
+            'uuid' => 'required',
             'name' => 'required|string|max:255',
             'description' => 'required|string|max:900',
             'subcategory_id' => 'required|exists:subcategories,id',
@@ -206,7 +213,7 @@ class ProductController extends Controller {
                     'longitude' => (float) $validatedData['longitude'],
                     'type' => $validatedData['type'],
                     'region_id' => $validatedData['child_region_id'],
-                    'user_id' => $request->user()->id,
+                    'user_id' => $validatedData['uuid'],
                 ]);
     
                 // ✅ Handle Images Upload
