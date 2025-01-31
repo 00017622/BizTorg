@@ -228,7 +228,7 @@ class ProductController extends Controller {
                             'image_url' => $path,
                         ]);
     
-                        $uploadedImages[] = asset("storage/$path");
+                        $uploadedImages[] = ['image_url' => asset("storage/$path")];
                     } catch (\Exception $e) {
                         Log::error("Failed to upload image: " . $e->getMessage());
                     }
@@ -269,7 +269,7 @@ class ProductController extends Controller {
     
                         $this->telegramService->sendMediaGroup($media);
                     } elseif (count($uploadedImages) === 1) {
-                        $this->telegramService->sendPhoto($uploadedImages[0], $productInfo);
+                        $this->telegramService->sendPhoto($uploadedImages[0]['image_url'], $productInfo);
                     } else {
                         $this->telegramService->sendMessage($productInfo);
                     }
