@@ -195,6 +195,8 @@ class ProductController extends Controller {
         'child_region_id' => 'required|exists:regions,id',
     ]);
 
+    Log::info('✅ Validated Data:', $validatedData);
+
     $slug = Str::slug($validatedData['name'], '-');
 
     try {
