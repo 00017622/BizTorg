@@ -286,7 +286,8 @@ class ProductController extends Controller {
     
                 // ✅ Send to Instagram
                 try {
-                    $this->instagramService->createCarouselPost($productInfo, $uploadedImages);
+                    $imageUrls = array_map(fn($image) => $image['image_url'], $uploadedImages);
+                    $this->instagramService->createCarouselPost($productInfo, $imageUrls);
                 } catch (\Exception $e) {
                     Log::error("Failed to send Instagram post: " . $e->getMessage());
                 }
