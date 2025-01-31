@@ -182,7 +182,7 @@ class ProductController extends Controller {
         ]);
 
         $validatedData = $request->validate([
-            'uuid' => 'required',
+            'uuid' => 'required|numeric|exists:users,id',
             'name' => 'required|string|max:255',
             'description' => 'required|string|max:900',
             'subcategory_id' => 'required|exists:subcategories,id',
