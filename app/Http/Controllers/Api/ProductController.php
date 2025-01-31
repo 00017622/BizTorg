@@ -179,21 +179,21 @@ class ProductController extends Controller {
             'name' => 'required|string|max:255',
             'description' => 'required|string|max:900',
             'subcategory_id' => 'required|exists:subcategories,id',
-            'images' => 'required|array',
-            'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images' => 'required|array|min:1',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'attributes' => 'required|array',
+            'attributes' => 'required|array|min:1',
             'attributes.*' => 'integer|exists:attribute_values,id',
             'price' => 'required|numeric|min:0',
             'currency' => 'required|string|in:сум,доллар',
             'type' => 'required|string|in:sale,purchase',
             'child_region_id' => 'required|exists:regions,id',
         ]);
-
-        $slug = Str::slug($validatedData['name'], '-');
-
+    
         try {
+            $slug = Str::slug($validatedData['name'], '-');
+    
             DB::transaction(function () use ($validatedData, $request, $slug) {
                 $product = Product::create([
                     'name' => $validatedData['name'],
@@ -202,32 +202,32 @@ class ProductController extends Controller {
                     'description' => $validatedData['description'],
                     'price' => $validatedData['price'],
                     'currency' => $validatedData['currency'],
-                    'latitude' => $validatedData['latitude'],
-                    'longitude' => $validatedData['longitude'],
+                    'latitude' => (float) $validatedData['latitude'],
+                    'longitude' => (float) $validatedData['longitude'],
                     'type' => $validatedData['type'],
                     'region_id' => $validatedData['child_region_id'],
                     'user_id' => $request->user()->id,
                 ]);
     
-                if ($request->hasFile('images')) {
-                    foreach ($request->file('images') as $image) {
-                        try {
-                            $path = $image->store('product-images', 'public');
-                            Log::info("Image uploaded successfully to: $path");
-                
-                            ProductImage::create([
-                                'product_id' => $product->id,
-                                'image_url' => $path,
-                            ]);
-                        } catch (\Exception $e) {
-                            Log::error("Failed to upload image: " . $e->getMessage());
-                        }
-                    
+                // ✅ Handle Images Upload
+                $uploadedImages = [];
+                foreach ($request->file('images') as $index => $image) {
+                    try {
+                        $path = $image->store('product-images', 'public');
+                        Log::info("Image uploaded successfully to: $path");
+    
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_url' => $path,
+                        ]);
+    
+                        $uploadedImages[] = asset("storage/$path");
+                    } catch (\Exception $e) {
+                        Log::error("Failed to upload image: " . $e->getMessage());
+                    }
                 }
-                } else {
-                   Log::info("Image was not found from the request");
-                }
-                
+    
+                // ✅ Sync Product Attributes
                 $product->attributeValues()->sync($validatedData['attributes']);
     
                 $productInfo = <<<INFO
@@ -245,136 +245,58 @@ class ProductController extends Controller {
     
     🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm">Местоположение в Yandex Maps</a>
     
-    
     🔗 <a href="https://biztorg.uz/obyavlenie/{$product->slug}">Подробнее по ссылке</a>
     INFO;
     
+                // ✅ Send to Telegram
+                try {
+                    if (count($uploadedImages) > 1) {
+                        $media = array_map(function ($image, $index) use ($productInfo) {
+                            return [
+                                'type' => 'photo',
+                                'media' => $image,
+                                'parse_mode' => 'HTML',
+                                'caption' => $index === 0 ? $productInfo : null
+                            ];
+                        }, $uploadedImages, array_keys($uploadedImages));
     
-                   $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
-                 
-                       $url = asset("storage/{$path}");
-                       Log::info("Constructed image URL: {$url}");
-                       return $url;
-                   })->toArray();
-                   
-    
-            if (!is_array($images)) {
-                throw new \InvalidArgumentException('Images should be an array.');
-            }
-    
-            try {
-                if (count($images) > 1) {
-                    $media = array_map(function ($image, $index) use ($productInfo) {
-                        $mediaItem = [
-                            'type' => 'photo',
-                            'media' => $image,
-                            'parse_mode' => 'HTML',
-                        ];
-                        if ($index === 0) {
-                            $mediaItem['caption'] = $productInfo;
-                        }
-                        return $mediaItem;
-                    }, $images, array_keys($images));
-                    
-                    $this->telegramService->sendMediaGroup($media);
-                } elseif (count($images) === 1) {
-                    Log::info("Sending single photo to Telegram: " . $images[0]);
-                    $this->telegramService->sendPhoto($images[0], $productInfo);
-                } else {
-                    $this->telegramService->sendMessage($productInfo);
+                        $this->telegramService->sendMediaGroup($media);
+                    } elseif (count($uploadedImages) === 1) {
+                        $this->telegramService->sendPhoto($uploadedImages[0], $productInfo);
+                    } else {
+                        $this->telegramService->sendMessage($productInfo);
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to send Telegram message: " . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                Log::error("Failed to send Telegram message: " . $e->getMessage());
-            }
-            
-            try {
     
-                $facebookProductInfo = <<<INFO
-    📢 Объявление: {$product->name}
-    
-    📝 Описание: {$product->description}
-    
-    📍 Регион: {$product->region->parent->name}, {$product->region->name}
-    
-    👤 Контактное лицо: {$product->user->name}
-    
-    📞 Номер телефона: {$product->user->profile->phone}
-    
-    🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-    
-    🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
-    
-    🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
-    INFO;
-    
-            $imagesForFacebook = ProductImage::where('product_id', $product->id)->get()->map(function ($image) {
-                $path = str_replace('\\', '/', $image->image_url);
-                return [
-                    'id' => $image->id,
-                    'image_url' => asset("storage/{$path}"), 
-                ];
-            })->toArray();
-    
-            
-            
-            $this->facebookService->createPost($facebookProductInfo, $imagesForFacebook);
-    
-                
-            } catch (\Exception $e) {
-                Log::error("Failed to send Facebook post" . $e->getMessage());
-            }
-    
-            try {
-            
-                $productImagesUrls = ProductImage::where('product_id', $product->id)->pluck('image_url');
-                $imagesUrls = [];
-    
-                foreach ($productImagesUrls as $productImageUrl) {
-                    $imagesUrls[] = asset("storage/{$productImageUrl}");
+                // ✅ Send to Facebook
+                try {
+                    $this->facebookService->createPost($productInfo, $uploadedImages);
+                } catch (\Exception $e) {
+                    Log::error("Failed to send Facebook post: " . $e->getMessage());
                 }
-            
-                $region = $product->region->parent->name ?? 'Unknown Region';
-                $subregion = $product->region->name ?? 'Unknown Subregion';
-                $phone = $product->user->profile->phone ?? 'No Phone Number Provided';
-            
-                $instaMessage = "
-                📢 Объявление: {$product->name}
-            
-                📝 Описание: {$product->description}
-            
-                📍 Регион: {$region}, {$subregion}
-            
-                👤 Контактное лицо: {$product->user->name}
-            
-                📞 Номер телефона: {$phone}
-            
-                🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-            
-                🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
-            
-                🔗 Подробнее по ссылке: https://biztorg/obyavlenie/{$product->slug}
-                ";
-            
-                $this->instagramService->createCarouselPost($instaMessage, $imagesUrls);
-            
-            } catch (\Exception $e) {
-                Log::error("Failed to send Instagram post: " . $e->getMessage());
-            }
-            
-            
-           
-        });
+    
+                // ✅ Send to Instagram
+                try {
+                    $this->instagramService->createCarouselPost($productInfo, $uploadedImages);
+                } catch (\Exception $e) {
+                    Log::error("Failed to send Instagram post: " . $e->getMessage());
+                }
+            });
+    
             return response()->json([
                 'message' => 'Product created successfully',
                 'status' => 'success',
-            ]);
+            ], 201);
         } catch (\Exception $e) {
             Log::error('Product creation failed: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Error occured',
+                'message' => 'Error occurred',
                 'status' => 'error',
-            ]);
+            ], 500);
         }
     }
+    
     
 }
