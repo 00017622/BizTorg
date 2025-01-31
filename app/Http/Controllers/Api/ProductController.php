@@ -371,13 +371,13 @@ INFO;
         return response()->json([
             'status' => 'success',
             'message' => 'Product is created',
-        ]);
+        ], 201);
     } catch (\Exception $e) {
         Log::error('Product creation failed: ' . $e->getMessage());
         return response()->json([
             'status' => 'error',
             'message' => 'Product was not created',
-        ]);
+        ], 500);
     }
 }
     
