@@ -31,3 +31,4 @@ Route::post('/v1/profile/update', [ProfileController::class, 'updateProfile']);
 
 Route::post('/v1/product/create', [ProductController::class, 'createProduct']);
 
+Route::get('/v1/product/{productId}', [ProductController::class, 'getProduct']);

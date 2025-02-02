@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attribute;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Region;
 use App\Models\Subcategory;
+use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -382,6 +384,45 @@ INFO;
         ], 500);
     }
 }
-    
-    
+
+public function getProduct($productId)
+{
+    $cacheKey = 'product_data_' . $productId;
+
+    $data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($productId) {
+        $product = Product::where('id', $productId)->firstOrFail();
+        $user = $product->user;
+
+        $attributes = $product->subcategory->attributes()->with(['attributeValues' => function ($query) use ($product) {
+            $query->whereExists(function ($q) use ($product) {
+                $q->from('product_attribute_values')
+                  ->whereColumn('product_attribute_values.attribute_value_id', 'attribute_values.id')
+                  ->where('product_attribute_values.product_id', $product->id);
+            });
+        }])->get();
+
+        $userProducts = $user->products()
+            ->where('id', '!=', $product->id)
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        $sameProducts = Product::where('subcategory_id', $product->subcategory->id)
+            ->where('id', '!=', $product->id)
+            ->whereNotIn('id', $user->products->pluck('id')->toArray())
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return [
+            'product'         => $product,
+            'sameProducts'    => $sameProducts,
+            'user'            => $user,
+            'attributes'      => $attributes,
+            'userProducts'    => $userProducts
+        ];
+    });
+
+    return response()->json($data);
+}
 }
