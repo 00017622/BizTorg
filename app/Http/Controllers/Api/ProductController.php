@@ -442,6 +442,9 @@ public function getProduct($productId)
                     'name' => $product->name,
                     'created_at' => $product->created_at,
                     'description' => $product->description,
+                    'user' => [
+                        'user_name' => $product->user->name ?? 'Неизвестный пользователь',
+                    ],
                     'images' => $product->images->map(function ($image) { 
                         return ['image_url' => $image->image_url]; 
                     })
