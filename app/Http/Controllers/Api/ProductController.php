@@ -390,7 +390,7 @@ public function getProduct($productId)
     $cacheKey = 'product_data_' . $productId;
 
     $data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($productId) {
-        $product = Product::where('id', $productId)->firstOrFail();
+        $product = Product::with(['images'])->where('id', $productId)->firstOrFail();
         $user = $product->user;
 
         $attributes = $product->subcategory->attributes()->with(['attributeValues' => function ($query) use ($product) {
@@ -402,17 +402,49 @@ public function getProduct($productId)
         }])->get();
 
         $userProducts = $user->products()
-            ->with(['images', 'region'])->where('id', '!=', $product->id)
+            ->with(['images', 'region'])
+            ->where('id', '!=', $product->id)
             ->latest()
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(function ($product) { 
+                return [
+                    'id' => $product->id,
+                    'price' => $product->price,
+                    'currency' => $product->currency,
+                    'latitude' => $product->latitude,
+                    'longitude' => $product->longitude,
+                    'type' => $product->type,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'images' => $product->images->map(function ($image) { 
+                        return ['image_url' => $image->image_url]; 
+                    })
+                ];
+            });
 
-        $sameProducts = Product::with(['images', 'region'])->where('subcategory_id', $product->subcategory->id)
+        $sameProducts = Product::with(['images', 'region'])
+            ->where('subcategory_id', $product->subcategory->id)
             ->where('id', '!=', $product->id)
             ->whereNotIn('id', $user->products->pluck('id')->toArray())
             ->latest()
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(function ($product) { 
+                return [
+                    'id' => $product->id,
+                    'price' => $product->price,
+                    'currency' => $product->currency,
+                    'latitude' => $product->latitude,
+                    'longitude' => $product->longitude,
+                    'type' => $product->type,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'images' => $product->images->map(function ($image) { 
+                        return ['image_url' => $image->image_url]; 
+                    })
+                ];
+            });
 
         return [
             'product'         => $product,
@@ -425,4 +457,5 @@ public function getProduct($productId)
 
     return response()->json($data);
 }
+
 }
