@@ -439,6 +439,7 @@ public function getProduct($productId)
                     'longitude' => $product->longitude,
                     'type' => $product->type,
                     'name' => $product->name,
+                    'created_at' => $product->created_at,
                     'description' => $product->description,
                     'images' => $product->images->map(function ($image) { 
                         return ['image_url' => $image->image_url]; 
