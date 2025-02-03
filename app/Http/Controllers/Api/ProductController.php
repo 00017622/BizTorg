@@ -402,7 +402,7 @@ public function getProduct($productId)
         }])->get();
 
         $userProducts = $user->products()
-            ->where('id', '!=', $product->id)
+            ->with(['images', 'region'])->where('id', '!=', $product->id)
             ->latest()
             ->limit(10)
             ->get();
