@@ -407,7 +407,7 @@ public function getProduct($productId)
             ->limit(10)
             ->get();
 
-        $sameProducts = Product::where('subcategory_id', $product->subcategory->id)
+        $sameProducts = Product::with(['images', 'region'])->where('subcategory_id', $product->subcategory->id)
             ->where('id', '!=', $product->id)
             ->whereNotIn('id', $user->products->pluck('id')->toArray())
             ->latest()

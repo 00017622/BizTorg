@@ -133,13 +133,7 @@
                      Открыть в Yandex
                  </a>                 
             </div>
-            <div class="mt-4 flex items-center gap-4">
-                <button id='btn-direction'
-                    class=" mt-2 text-white border border-gray-900 flex items-center gap-2 py-2 px-4 rounded-lg transition">
-                    <i class='bx bxs-direction-left text-xl'></i>
-                     <span>Показать маршрут</span> 
-                 </button>    
-            </div>
+          
         </div>
     </section>
     
