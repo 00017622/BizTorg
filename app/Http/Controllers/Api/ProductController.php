@@ -20,6 +20,7 @@ use App\Services\InstagramService;
 use App\Services\TelegramService;
 use DB;
 use Str;
+use Illuminate\Support\Facades\Auth;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -461,6 +462,39 @@ public function getProduct($productId)
     });
 
     return response()->json($data);
+}
+
+public function toggleFavorites(Request $request)
+{
+
+    $user = $request->user();
+    $productId = $request->input('product_id');
+
+    if (!$productId || !Product::find($productId)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Invalid product ID',
+        ], 400); 
+    }
+
+    $user->favoriteProducts()->toggle($productId);
+
+    $isFavorited = $user->favoriteProducts()->where('product_id', $productId)->exists();
+
+    return response()->json([
+        'status' => 'success',
+        'isFavorited' => $isFavorited,
+    ]);
+}
+
+public function getFavorite(Request $request) {
+    $user = $request->user();
+    $favorites = $user->favoriteProducts()->pluck('product_id');
+
+    return response()->json([
+        'status' => 'success',
+        'favorites' => $favorites,
+    ]);
 }
 
 }
