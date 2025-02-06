@@ -393,6 +393,7 @@ public function getProduct($productId)
     $data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($productId) {
         $product = Product::with(['images'])->where('id', $productId)->firstOrFail();
         $user = $product->user;
+        $profile = $product->user->profile;
 
         $attributes = $product->subcategory->attributes()->with(['attributeValues' => function ($query) use ($product) {
             $query->whereExists(function ($q) use ($product) {
@@ -456,6 +457,7 @@ public function getProduct($productId)
             'product'         => $product,
             'sameProducts'    => $sameProducts,
             'user'            => $user,
+            'profile'         => $profile,
             'attributes'      => $attributes,
             'userProducts'    => $userProducts
         ];
