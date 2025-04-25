@@ -13,7 +13,7 @@ class InstagramService {
 
     public function __construct()
     {
-        $this->accessToken = 'EAANaazjLaZCkBO0QQRxQN897YsWoL0RpFmpzBemFIoGEW82ZBWFVldST1WUuLJf9ffxwV1xWFiUj8fjNONNaMjvw8rpsZCZAHM9IY7RI2GZCHIHovU1KZC4spZAc6fKCQFIpgCP20XCVgFktskeyr56KuDKEocL6RC8AhtGa0Pl3yhdMMWYPlYUDSeX';
+        $this->accessToken = 'EAANaazjLaZCkBO39FOoGGBPjlzZAL1oU7HxlaW4bKyKOmsRqzooToRfNIYL9DD3FLMWtSkdZB0RcLaeqVvZA1AFeSjUfPwrbjSsynq4LpgeeTlZBpUkLQWh09xqZCQfPnRbornNy89WenPKbL6mMD2bwHsi6hmuQeqQA41UX5yFxYkYGBkfVZAdnBDMrUdo';
         $this->instagramAccountId = '17841468384967861';
         $this->defaultImage = 'https://brilliant24.ru/files/cat/template_01.png';
     }
