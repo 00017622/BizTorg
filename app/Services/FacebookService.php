@@ -15,7 +15,7 @@ class FacebookService {
 
     public function __construct()
     {
-        $this->pageAccessToken = 'EAANaazjLaZCkBO0QQRxQN897YsWoL0RpFmpzBemFIoGEW82ZBWFVldST1WUuLJf9ffxwV1xWFiUj8fjNONNaMjvw8rpsZCZAHM9IY7RI2GZCHIHovU1KZC4spZAc6fKCQFIpgCP20XCVgFktskeyr56KuDKEocL6RC8AhtGa0Pl3yhdMMWYPlYUDSeX';
+        $this->pageAccessToken = 'EAANaazjLaZCkBO39FOoGGBPjlzZAL1oU7HxlaW4bKyKOmsRqzooToRfNIYL9DD3FLMWtSkdZB0RcLaeqVvZA1AFeSjUfPwrbjSsynq4LpgeeTlZBpUkLQWh09xqZCQfPnRbornNy89WenPKbL6mMD2bwHsi6hmuQeqQA41UX5yFxYkYGBkfVZAdnBDMrUdo';
         $this->pageId = '511524108707522';
     
         if (empty($this->pageAccessToken) || empty($this->pageId)) {
