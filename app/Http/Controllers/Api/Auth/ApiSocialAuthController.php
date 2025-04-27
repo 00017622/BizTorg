@@ -123,7 +123,7 @@ class ApiSocialAuthController extends Controller {
             ], 200, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE); 
 
         } catch(Exception $e) {
-            Log::error('Google login error: ' . $e->getMessage());
+            Log::error('Facebook login error: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Error while signing in.',
