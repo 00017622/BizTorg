@@ -426,7 +426,6 @@ public function deleteImage($id)
     }
 }
 
-
 }
 
 

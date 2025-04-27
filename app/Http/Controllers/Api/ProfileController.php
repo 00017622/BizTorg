@@ -29,7 +29,7 @@ class ProfileController extends Controller
         'name' => 'required|string|max:255',
         'email' => "required|email|max:255|unique:users,email,{$id}",
         'phone' => 'required|string|max:20',
-        'address' => 'required|string|max:255',
+      
         'region_id' => 'nullable|exists:regions,id',
     ]);
 
@@ -49,7 +49,7 @@ class ProfileController extends Controller
         ['user_id' => $user->id],
         [
             'phone' => $validatedData['phone'],
-            'address' => $validatedData['address'],
+        
             'region_id' => $validatedData['region_id'],
         ]
     );

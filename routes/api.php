@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\Auth\ApiSocialAuthController;
 use App\Http\Controllers\Api\Auth\CustomLoginController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ConversationsController;
+use App\Http\Controllers\Api\MessagesController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RegionsController;
 use App\Http\Controllers\Api\ProfileController;
@@ -34,3 +36,31 @@ Route::post('/v1/product/create', [ProductController::class, 'createProduct']);
 Route::get('/v1/product/{productId}', [ProductController::class, 'getProduct']);
 Route::get('/v1/favorites/', [ProductController::class, 'getFavorite'])->middleware('auth:sanctum');;
 Route::post('/v1/favorite/toggle/', [ProductController::class, 'toggleFavorites'])->middleware('auth:sanctum');
+Route::post('v1/send/message/', [MessagesController::class, 'sendMessage'])->middleware('auth:sanctum');
+
+Route::get('v1/getMessages/{receiver_id}', [MessagesController::class, 'getMessages'])->middleware('auth:sanctum');
+
+Route::post('v1/store-fcm-token', [CustomLoginController::class, 'storeFcmToken']);
+Route::post('v1/clear-fcm-token', [CustomLoginController::class, 'clearFcmToken']);
+
+Route::get('v1/user/{id}', [CustomLoginController::class, 'show']);
+Route::get('v1/user/{id}/fcm-token', [CustomLoginController::class, 'getFcmToken']);
+
+Route::get('/v1/user/{uuid}/products', [ProductController::class, 'getUserProducts'])->middleware('auth:sanctum');
+Route::delete('/v1/products/delete/{productId}', [ProductController::class, 'removeProduct'])->middleware('auth:sanctum');
+Route::get('/v1/fetch/product/{id}', [ProductController::class, 'fetchSingleProduct']);
+
+Route::post('/v1/product/update/{id}', [ProductController::class, 'updateProduct'])->middleware('auth:sanctum');
+
+Route::delete('/v1/product/image/{id}', [ProductController::class, 'deleteImage'])->middleware('auth:sanctum');
+
+Route::get('/v1/user/favorites/{uuid}', [ProductController::class, 'getFavoritesOfUser'])->middleware('auth:sanctum');
+Route::get('/v1/user/get/chat/conversations', [ConversationsController::class, 'getChats'])->middleware('auth:sanctum');
+
+Route::get('/v1/search-recommendations', [CategoryController::class, 'searchRecommendations']);
+
+Route::get('/v1/search', [CategoryController::class, 'searchProducts']);
+
+Route::get('v1/category/{categoryId}/products', [ProductController::class, 'getProductsByCategory']);
+
+Route::get('/v1/find-category/subcategory/{id}', [CategoryController::class, 'getCategory']);

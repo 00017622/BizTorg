@@ -97,4 +97,63 @@ class CustomLoginController extends Controller {
             'message' => 'successfully logged in',
         ], 201);
     }
+
+
+    public function storeFcmToken(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'fcm_token' => 'required|string',
+    ]);
+
+    try {
+        $user = User::findOrFail($request->user_id);
+        $user->fcm_token = $request->fcm_token;
+        $user->save();
+
+        return response()->json([
+            'message' => 'FCM token updated successfully',
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to update FCM token',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function clearFcmToken(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+    ]);
+
+    try {
+        $user = User::findOrFail($request->user_id);
+        $user->fcm_token = null;
+        $user->save();
+
+        return response()->json([
+            'message' => 'FCM token cleared successfully',
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to clear FCM token',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+    public function show($id)
+    {
+        $user = User::findOrFail($id);
+        return response()->json([
+            'name' => $user->name,
+        ], 200);
+    }
+
+        public function getFcmToken($id)
+    {
+        $user = User::findOrFail($id);
+        return response()->json(['fcm_token' => $user->fcm_token], 200);
+    }
 }
