@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MessagesController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RegionsController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\NotificationsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/categories', [CategoryController::class, 'allCategories']);
@@ -64,3 +65,9 @@ Route::get('/v1/search', [CategoryController::class, 'searchProducts']);
 Route::get('v1/category/{categoryId}/products', [ProductController::class, 'getProductsByCategory']);
 
 Route::get('/v1/find-category/subcategory/{id}', [CategoryController::class, 'getCategory']);
+
+Route::get('/v1/notifications', [NotificationsController::class, 'index'])->middleware('auth:sanctum');
+
+Route::post('/v1/notifications/mark-all-seen', [NotificationsController::class, 'markAsSeen'])->middleware('auth:sanctum');
+
+Route::post('/v1/notifications/mark-seen-for-chat', [NotificationsController::class, 'markSeenForChat'])->middleware('auth:sanctum');
