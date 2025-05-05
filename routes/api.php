@@ -71,3 +71,7 @@ Route::get('/v1/notifications', [NotificationsController::class, 'index'])->midd
 Route::post('/v1/notifications/mark-all-seen', [NotificationsController::class, 'markAsSeen'])->middleware('auth:sanctum');
 
 Route::post('/v1/notifications/mark-seen-for-chat', [NotificationsController::class, 'markSeenForChat'])->middleware('auth:sanctum');
+
+Route::post('/v1/auth/send-verification-code', [CustomLoginController::class, 'sendVerificationCode']);
+
+Route::post('/v1/auth/verify-and-register', [CustomLoginController::class, 'verifyAndRegister']);
