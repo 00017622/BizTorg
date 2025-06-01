@@ -24,7 +24,7 @@ class TelegramService {
                 'chat_id' => $this->chatId,
                 'text' => $message,
                 'parse_mode' => 'HTML',
-                'reply_markup' => $productUrl ? json_encode([
+                'reply_markup' => json_encode([
                     'inline_keyboard' => [
                         [
                             [
@@ -33,7 +33,7 @@ class TelegramService {
                             ],
                         ],
                     ],
-                ]) : null,
+                ]),
             ];
 
             $response = Http::post($url, $postFields);
@@ -58,7 +58,7 @@ class TelegramService {
                 'photo' => $photoUrl,
                 'caption' => $caption,
                 'parse_mode' => 'HTML',
-                'reply_markup' => $productUrl ? json_encode([
+                'reply_markup' =>  json_encode([
                     'inline_keyboard' => [
                         [
                             [
@@ -67,7 +67,7 @@ class TelegramService {
                             ],
                         ],
                     ],
-                ]) : null,
+                ]),
             ];
 
             Log::info("Sending photo to Telegram: " . json_encode($postFields));

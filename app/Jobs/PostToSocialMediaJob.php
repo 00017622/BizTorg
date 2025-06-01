@@ -45,6 +45,7 @@ class PostToSocialMediaJob implements ShouldQueue
 📝 <b>Описание:</b> {$this->product->description}
 
 📍 <b>Регион:</b> {$this->product->region->parent->name}, {$this->product->region->name}
+
 INFO;
 
             $messageStartFacebookInstagram = <<<INFO
@@ -53,10 +54,10 @@ INFO;
 📝 Описание: {$this->product->description}
 
 📍 Регион: {$this->product->region->parent->name}, {$this->product->region->name}
+
 INFO;
 
             $telegramEnd = <<<INFO
-
 👤 <b>Контактное лицо:</b> {$this->contactName};
 
 📞 <b>Номер телефона:</b> {$this->contactPhone}
@@ -65,7 +66,6 @@ INFO;
 INFO;
 
             $facebookEnd = <<<INFO
-
 👤 Контактное лицо: {$this->contactName}
 
 📞 Номер телефона: {$this->contactPhone}
@@ -81,16 +81,16 @@ INFO;
 🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$this->product->longitude},{$this->product->latitude}&z=17&l=map&pt={$this->product->longitude},{$this->product->latitude},pm2rdm
 ";
 
-            $shopLineTelegram = $this->isShop && $this->shopName ? "\n\n🏪 <b>Магазин:</b> {$this->shopName}\n" : '';
-            $shopLineFacebook = $this->isShop && $this->shopName ? "\n\n🏪 Магазин: {$this->shopName}\n" : '';
-            $shopLineInstagram = $this->isShop && $this->shopName ? "\n\n🏪 Магазин: {$this->shopName}\n" : '';
+            $shopLineTelegram = $this->isShop && $this->shopName ? "\n🏪 <b>Магазин:</b> {$this->shopName}" : '';
+            $shopLineFacebook = $this->isShop && $this->shopName ? "\n🏪 Магазин: {$this->shopName}" : '';
+            $shopLineInstagram = $this->isShop && $this->shopName ? "\n🏪 Магазин: {$this->shopName}" : '';
 
             $productInfo = $messageStartTelegram . $shopLineTelegram . $telegramEnd;
             $facebookProductInfo = $messageStartFacebookInstagram . $shopLineFacebook . $facebookEnd;
             $instaMessage = $messageStartFacebookInstagram . $shopLineInstagram . $instagramEnd;
 
             $buttonText = 'Перейти к объявлению ➡️';
-            $productUrl = "https://44f7-95-214-211-229.ngrok-free.app/obyavlenie/{$this->product->slug}";
+            $productUrl = "https://biztorg.uz/obyavlenie/{$this->product->slug}";
             $locationUrl = "https://yandex.ru/maps/?ll={$this->product->longitude},{$this->product->latitude}&z=17&l=map&pt={$this->product->longitude},{$this->product->latitude},pm2rdm";
             $contactPhone = $this->contactPhone;
 
@@ -108,7 +108,7 @@ INFO;
                     }
                     $media[] = $mediaItem;
                 }
-                $telegramResponse = $telegramService->sendMediaGroup($media, $buttonText, $productUrl, $locationUrl, $contactPhone);
+                $telegramResponse = $telegramService->sendMediaGroup($media, $buttonText, $productUrl);
                 Log::debug('Telegram response before update: ', $telegramResponse);
                 if (isset($telegramResponse['result']['message_id'])) {
                     $telegramPostId = $telegramResponse['result']['message_id'];
@@ -119,7 +119,7 @@ INFO;
                     Log::warning('Telegram post ID not found in response: ', $telegramResponse);
                 }
             } elseif (count($this->images) === 1) {
-                $telegramResponse = $telegramService->sendPhoto($this->images[0], $productInfo, $buttonText, $productUrl, $locationUrl, $contactPhone);
+                $telegramResponse = $telegramService->sendPhoto($this->images[0], $productInfo, $buttonText, $productUrl);
                 Log::debug('Telegram response before update: ', $telegramResponse);
                 if (isset($telegramResponse['result']['message_id'])) {
                     $telegramPostId = $telegramResponse['result']['message_id'];
@@ -130,7 +130,7 @@ INFO;
                     Log::warning('Telegram post ID not found in response: ', $telegramResponse);
                 }
             } else {
-                $telegramResponse = $telegramService->sendMessage($productInfo, $buttonText, $productUrl, $locationUrl, $contactPhone);
+                $telegramResponse = $telegramService->sendMessage($productInfo, $buttonText, $productUrl);
                 Log::debug('Telegram response before update: ', $telegramResponse);
                 if (isset($telegramResponse['result']['message_id'])) {
                     $telegramPostId = $telegramResponse['result']['message_id'];

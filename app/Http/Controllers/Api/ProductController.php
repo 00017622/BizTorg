@@ -485,22 +485,11 @@ public function createProduct(Request $request)
     }
 }
 
-            // $images = ProductImage::where('product_id', $product->id)
-            //     ->pluck('image_url')
-            //     ->map(function ($path) {
-            //         return asset("storage/{$path}");
-            //     })->toArray();
-
-            $images = [];
-            if (!empty($imagePaths)) {
-                $images = ProductImage::where('product_id', $product->id)
-                    ->pluck('image_url')
-                    ->map(function ($path) {
-                        return "https://coffective.com/wp-content/uploads/2018/06/default-featured-image.png.jpg"; // Replace with actual public URL
-                    })->toArray();
-            } else {
-                $images = ["https://biztorg.uz/storage/categories/December2024/nFLC7qONERwJaN2oWksq.webp"];
-            }
+            $images = ProductImage::where('product_id', $product->id)
+                ->pluck('image_url')
+                ->map(function ($path) {
+                    return asset("storage/{$path}");
+                })->toArray();
 
             PostToSocialMediaJob::dispatch($product, $contactName, $contactPhone, $images, $isShop, $determineShopName);
         });
