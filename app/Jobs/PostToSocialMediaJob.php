@@ -58,6 +58,7 @@ INFO;
 INFO;
 
             $telegramEnd = <<<INFO
+
 👤 <b>Контактное лицо:</b> {$this->contactName};
 
 📞 <b>Номер телефона:</b> {$this->contactPhone}
@@ -66,6 +67,7 @@ INFO;
 INFO;
 
             $facebookEnd = <<<INFO
+
 👤 Контактное лицо: {$this->contactName}
 
 📞 Номер телефона: {$this->contactPhone}
@@ -74,6 +76,7 @@ INFO;
 INFO;
 
             $instagramEnd = "
+
 👤 Контактное лицо: {$this->contactName}
 
 📞 Номер телефона: {$this->contactPhone}
