@@ -58,7 +58,7 @@ class TelegramService {
                 'photo' => $photoUrl,
                 'caption' => $caption,
                 'parse_mode' => 'HTML',
-                'reply_markup' =>  json_encode([
+                'reply_markup' => json_encode([
                     'inline_keyboard' => [
                         [
                             [
@@ -102,9 +102,13 @@ class TelegramService {
                 throw new \Exception("Telegram sendMediaGroup failed: " . $response->body());
             }
 
-            // Send a follow-up message with the button
+            // Send a follow-up message with the button if URL is provided
             if ($productUrl) {
-                $this->sendMessage('', $buttonText, $productUrl);
+                $followUpResponse = $this->sendMessage('', $buttonText, $productUrl);
+                Log::info("Follow-up message with button sent: ", $followUpResponse);
+                if (isset($followUpResponse['result']['message_id'])) {
+                    return array_merge($response->json(), ['follow_up_message_id' => $followUpResponse['result']['message_id']]);
+                }
             }
 
             return $response->json();
@@ -152,63 +156,63 @@ class TelegramService {
         }
     }
 
-     public function updateMessage(
-    string $messageId,
-    string $text,
-    string $buttonText = '🔗 Подробнее',
-    string $productUrl = '',
-): array {
-    try {
-        Log::info("Attempting to update Telegram message with ID: {$messageId} with text: {$text}");
+    public function updateMessage(
+        string $messageId,
+        string $text,
+        string $buttonText = '🔗 Подробнее',
+        string $productUrl = '',
+    ): array {
+        try {
+            Log::info("Attempting to update Telegram message with ID: {$messageId} with text: {$text}");
 
-        // Always include the inline keyboard
-        $replyMarkup = [
-            'inline_keyboard' => [
-                [
-                    ['text' => $buttonText, 'url' => $productUrl],
+            // Always include the inline keyboard
+            $replyMarkup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => $buttonText, 'url' => $productUrl],
+                    ],
                 ],
-            ],
-        ];
+            ];
 
-        // First, update the message caption (for messages with photos) or text (for text-only messages)
-        $url = "https://api.telegram.org/bot{$this->botToken}/editMessageCaption";
-        $params = [
-            'chat_id' => $this->chatId,
-            'message_id' => $messageId,
-            'caption' => $text,
-            'parse_mode' => 'HTML',
-            'reply_markup' => json_encode($replyMarkup),
-        ];
-
-        $response = Http::timeout(30)->post($url, $params);
-
-        // If editMessageCaption fails (e.g., the message is text-only), try editMessageText
-        if ($response->failed()) {
-            Log::info("editMessageCaption failed, trying editMessageText for message {$messageId}");
-            $url = "https://api.telegram.org/bot{$this->botToken}/editMessageText";
+            // First, update the message caption (for messages with photos) or text (for text-only messages)
+            $url = "https://api.telegram.org/bot{$this->botToken}/editMessageCaption";
             $params = [
                 'chat_id' => $this->chatId,
                 'message_id' => $messageId,
-                'text' => $text,
+                'caption' => $text,
                 'parse_mode' => 'HTML',
                 'reply_markup' => json_encode($replyMarkup),
             ];
 
             $response = Http::timeout(30)->post($url, $params);
 
+            // If editMessageCaption fails (e.g., the message is text-only), try editMessageText
             if ($response->failed()) {
-                Log::error("Failed to update Telegram message {$messageId}: " . $response->body());
-                throw new \Exception("Telegram message update failed: " . $response->body());
-            }
-        }
+                Log::info("editMessageCaption failed, trying editMessageText for message {$messageId}");
+                $url = "https://api.telegram.org/bot{$this->botToken}/editMessageText";
+                $params = [
+                    'chat_id' => $this->chatId,
+                    'message_id' => $messageId,
+                    'text' => $text,
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode($replyMarkup),
+                ];
 
-        Log::info("Successfully updated Telegram message {$messageId}");
-        return $response->json();
-    } catch (\Exception $e) {
-        Log::error("Telegram updateMessage error for message {$messageId}: " . $e->getMessage(), [
-            'exception' => $e->getTraceAsString(),
-        ]);
-        return ['error' => $e->getMessage()];
+                $response = Http::timeout(30)->post($url, $params);
+
+                if ($response->failed()) {
+                    Log::error("Failed to update Telegram message {$messageId}: " . $response->body());
+                    throw new \Exception("Telegram message update failed: " . $response->body());
+                }
+            }
+
+            Log::info("Successfully updated Telegram message {$messageId}");
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::error("Telegram updateMessage error for message {$messageId}: " . $e->getMessage(), [
+                'exception' => $e->getTraceAsString(),
+            ]);
+            return ['error' => $e->getMessage()];
+        }
     }
-}
 }
