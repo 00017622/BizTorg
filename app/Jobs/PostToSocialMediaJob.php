@@ -64,6 +64,8 @@ INFO;
 📞 <b>Номер телефона:</b> {$this->contactPhone}
 
 🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$this->product->longitude},{$this->product->latitude}&z=17&l=map&pt={$this->product->longitude},{$this->product->latitude},pm2rdm">Местоположение в Yandex Maps</a>
+
+🌐 <b>Подробнее по ссылке:</b> <a href="https://biztorg.uz/obyavlenie/{$this->product->slug}">Перейти</a>
 INFO;
 
             $facebookEnd = <<<INFO
@@ -73,6 +75,8 @@ INFO;
 📞 Номер телефона: {$this->contactPhone}
 
 🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$this->product->longitude},{$this->product->latitude}&z=17&l=map&pt={$this->product->longitude},{$this->product->latitude},pm2rdm
+
+🌐 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$this->product->slug}
 INFO;
 
             $instagramEnd = "
@@ -82,6 +86,8 @@ INFO;
 📞 Номер телефона: {$this->contactPhone}
 
 🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$this->product->longitude},{$this->product->latitude}&z=17&l=map&pt={$this->product->longitude},{$this->product->latitude},pm2rdm
+
+🌐 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$this->product->slug}
 ";
 
             $shopLineTelegram = $this->isShop && $this->shopName ? "\n🏪 <b>Магазин:</b> {$this->shopName}" : '';
