@@ -19,7 +19,8 @@ class User extends \TCG\Voyager\Models\User
         'telegram_id',
         'google_id',
         'avatar',
-        'fcm_token'
+        'fcm_token',
+        'isShop',
     ];
 
     protected $hidden = [
@@ -32,6 +33,7 @@ class User extends \TCG\Voyager\Models\User
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'isShop' => 'boolean',
         ];
     }
 
@@ -54,5 +56,21 @@ class User extends \TCG\Voyager\Models\User
     public function favoriteProducts()
     {
         return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
+    }
+
+    public function isShop() {
+        return $this->isShop;
+    }
+
+    public function shopProfile() {
+        return $this->hasOne(ShopProfile::class, 'user_id', 'id');
+    }
+
+    public function subscribedShops() {
+        return $this->belongsToMany(ShopProfile::class, 'shop_subscriptions', 'user_id', 'shop_id');
+    }
+
+    public function subscriptions() {
+        return $this->hasMany(ShopSubscription::class, 'user_id');
     }
 }

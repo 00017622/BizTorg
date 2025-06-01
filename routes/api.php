@@ -7,11 +7,16 @@ use App\Http\Controllers\Api\ConversationsController;
 use App\Http\Controllers\Api\MessagesController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RegionsController;
+use App\Http\Controllers\ShopRatingController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\ShopProfileController;
+use App\Http\Controllers\ShopSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/v1/categories', [CategoryController::class, 'allCategories']);
+Route::get('/v1/home', [CategoryController::class, 'homePage']);
+
+Route::get('/v1/categories', [CategoryController::class, 'fetchCategories']);
 
 Route::get('/v1/{categoryId}/subcategories', [CategoryController::class, 'fetchSubcategories']);
 
@@ -75,3 +80,22 @@ Route::post('/v1/notifications/mark-seen-for-chat', [NotificationsController::cl
 Route::post('/v1/auth/send-verification-code', [CustomLoginController::class, 'sendVerificationCode']);
 
 Route::post('/v1/auth/verify-and-register', [CustomLoginController::class, 'verifyAndRegister']);
+
+Route::post('/v1/shop-profiles/', [ShopProfileController::class, 'store'])->middleware('auth:sanctum');
+
+Route::post('/v1/shop/update', [ShopProfileController::class, 'updateShopData'])->middleware('auth:sanctum');
+
+Route::post('/v1/{shopId}/upload-profile-images/', [ShopProfileController::class, 'updateImages'])->middleware('auth:sanctum');
+
+Route::get('/v1/{shopId}/getShop', [ShopProfileController::class, 'getShopProfile'])->middleware('auth:sanctum');
+
+Route::post('/v1/subscribe/{shopId}', [ShopSubscriptionController::class, 'subscribe'])->middleware('auth:sanctum');
+Route::post('/v1/unsubscribe/{shopId}', [ShopSubscriptionController::class, 'unsubscribe'])->middleware('auth:sanctum');
+
+Route::get('/v1/shops/{userId}', [ShopProfileController::class, 'getUserProducts']);
+
+
+
+Route::post('/v1/shop/rate', [ShopRatingController::class, 'rateShop'])->middleware('auth:sanctum');
+
+Route::post('/v1/upload/chat-image/', [MessagesController::class, 'uploadChatImage'])->middleware('auth:sanctum');

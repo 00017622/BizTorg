@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\PostToSocialMediaJob;
+use App\Jobs\RemoveFromSocialMediaJob;
+use App\Jobs\SendFcmNotification;
+
+use App\Jobs\UpdateSocialMediaPostsJob;
 use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Region;
+use App\Models\ShopProfile;
 use App\Models\Subcategory;
 use App\Models\User;
 use Exception;
@@ -107,7 +113,7 @@ class ProductController extends Controller {
     public function filterProducts(Request $request)
 {
     try {
-        $usdRate = 12900; // $this->currencyService->getDollarRate() ?? 12900;
+        $usdRate = 12950; // $this->currencyService->getDollarRate() ?? 12900;
 
         // Get page and per_page from query parameters
         $page = $request->query('page', 1);
@@ -118,7 +124,7 @@ class ProductController extends Controller {
 
         Log::info("FilterProducts: Search query received: '$query'");
 
-        $productsQuery = Product::query()->with(['images', 'region']);
+        $productsQuery = Product::query()->with(['images', 'region.parent']);
 
         if (!empty($query)) {
             // Step 1.1: Preprocess the query for full-text search
@@ -161,7 +167,7 @@ class ProductController extends Controller {
                     "(ts_rank(name_tsvector, to_tsquery('simple', ?)) + ts_rank(description_tsvector, to_tsquery('simple', ?)) + ts_rank(slug_tsvector, to_tsquery('simple', ?))) DESC",
                     [$tsQuery, $tsQuery, $tsQuery]
                 )
-                ->with(['images', 'region']);
+                ->with(['images', 'region.parent']);
 
             $fullTextProducts = $fullTextQuery->get(); // Fetch all matching products for now
 
@@ -194,7 +200,7 @@ class ProductController extends Controller {
             $trigramProducts = $trigramQuery->whereRaw("($trigramConditionString)", $trigramBindings)
                 ->whereRaw("$trigramMaxSimilarityString >= ?", [$similarityThreshold])
                 ->orderByRaw("$trigramMaxSimilarityString DESC", $trigramOrderBindings)
-                ->with(['images', 'region'])
+                ->with(['images', 'region.parent'])
                 ->get(); // Fetch all matching products for now
 
             Log::info("FilterProducts: Trigram search results: " . $trigramProducts->toJson());
@@ -300,13 +306,16 @@ class ProductController extends Controller {
         // Step 3: Paginate the results after applying all filters
         $products = $productsQuery->paginate($perPage, ['*'], 'page', $page);
 
-        // Step 4: Transform the products to include image_url at the root level from the first image
+        // Step 4: Transform the products to include image_url at the root level from the first image and parent region
         $transformedProducts = collect($products->items())->map(function ($product) {
             $productData = $product->toArray();
             // Set image_url from the first image in the images relationship, or null if no images
             $productData['image_url'] = $product->images->isNotEmpty()
                 ? $product->images->first()->image_url
                 : null;
+                $productData['isFromShop'] = $product->user->isShop;
+            // Replace region with parent region name
+            $productData['region'] = $product->parentRegion->name ?? $product->region->name ?? null;
             return $productData;
         });
 
@@ -341,14 +350,14 @@ private function similarity($string1, $string2)
     return DB::selectOne("SELECT similarity(?, ?) as sim", [$string1, $string2])->sim ?? 0;
 }
 
-    public function createProduct(Request $request)
+public function createProduct(Request $request)
 {
     $validatedData = $request->validate([
         'uuid' => 'required|numeric|exists:users,id',
         'name' => 'required|string|max:255',
         'description' => 'required|string|max:900',
         'subcategory_id' => 'required|exists:subcategories,id',
-        'images' => 'required|array|min:1',
+        'images' => 'nullable|array',
         'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         'latitude' => 'required|numeric|between:-90,90',
         'longitude' => 'required|numeric|between:-180,180',
@@ -380,16 +389,23 @@ private function similarity($string1, $string2)
                 'user_id' => $validatedData['uuid'],
             ]);
 
+            // Initialize an array to store image paths
+            $imagePaths = [];
+
+            // Handle image uploads
             if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) { 
+                foreach ($request->file('images') as $image) {
                     try {
-                        $path = $image->store('product-images', 'public'); 
+                        $path = $image->store('product-images', 'public');
                         Log::info("✅ Image uploaded successfully to: $path");
-            
+
                         ProductImage::create([
                             'product_id' => $product->id,
                             'image_url' => $path,
                         ]);
+
+                        // Add the stored path to the array
+                        $imagePaths[] = $path;
                     } catch (\Exception $e) {
                         Log::error("❌ Failed to upload image: " . $e->getMessage());
                     }
@@ -397,144 +413,98 @@ private function similarity($string1, $string2)
             } else {
                 Log::warning("⚠️ No images were uploaded.");
             }
-            
-           
+
             $product->attributeValues()->sync($validatedData['attributes']);
 
-            $productInfo = <<<INFO
-📢 <b>Объявление:</b> {$product->name}
-
-📝 <b>Описание:</b> {$product->description}
-
-📍 <b>Регион:</b> {$product->region->parent->name}, {$product->region->name}
-
-👤 <b>Контактное лицо:</b> {$product->user->name}
-
-📞 <b>Номер телефона:</b> <a href="tel:{$product->user->profile->phone}">{$product->user->profile->phone}</a>
-
-🌍 <b>Карта:</b> <a href="https://www.google.com/maps?q={$product->latitude},{$product->longitude}">Местоположение в Google Maps</a>
-
-🌍 <b>Карта:</b> <a href="https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm">Местоположение в Yandex Maps</a>
 
 
-🔗 <a href="https://biztorg.uz/obyavlenie/{$product->slug}">Подробнее по ссылке</a>
-INFO;
+            $user = User::findOrFail($validatedData['uuid']);
 
-
-               $images = ProductImage::where('product_id', $product->id)->pluck('image_url')->map(function ($path) {
-             
-                   $url = asset("storage/{$path}");
-                   Log::info("Constructed image URL: {$url}");
-                   return $url;
-               })->toArray();
-               
-
-        if (!is_array($images)) {
-            throw new \InvalidArgumentException('Images should be an array.');
-        }
-
-        try {
-            if (count($images) > 1) {
-                $media = array_map(function ($image, $index) use ($productInfo) {
-                    $mediaItem = [
-                        'type' => 'photo',
-                        'media' => $image,
-                        'parse_mode' => 'HTML',
-                    ];
-                    if ($index === 0) {
-                        $mediaItem['caption'] = $productInfo;
-                    }
-                    return $mediaItem;
-                }, $images, array_keys($images));
-                
-                $this->telegramService->sendMediaGroup($media);
-            } elseif (count($images) === 1) {
-                Log::info("Sending single photo to Telegram: " . $images[0]);
-                $this->telegramService->sendPhoto($images[0], $productInfo);
-            } else {
-                $this->telegramService->sendMessage($productInfo);
-            }
-        } catch (\Exception $e) {
-            Log::error("Failed to send Telegram message: " . $e->getMessage());
-        }
-        
-        try {
-
-            $facebookProductInfo = <<<INFO
-📢 Объявление: {$product->name}
-
-📝 Описание: {$product->description}
-
-📍 Регион: {$product->region->parent->name}, {$product->region->name}
-
-👤 Контактное лицо: {$product->user->name}
-
-📞 Номер телефона: {$product->user->profile->phone}
-
-🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-
-🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
-
-🔗 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$product->slug}
-INFO;
-
-        $imagesForFacebook = ProductImage::where('product_id', $product->id)->get()->map(function ($image) {
-            $path = str_replace('\\', '/', $image->image_url);
-            return [
-                'id' => $image->id,
-                'image_url' => asset("storage/{$path}"), 
-            ];
-        })->toArray();
-
-        
-        
-        $this->facebookService->createPost($facebookProductInfo, $imagesForFacebook);
-
-            
-        } catch (\Exception $e) {
-            Log::error("Failed to send Facebook post" . $e->getMessage());
-        }
-
-        try {
-        
-            $productImagesUrls = ProductImage::where('product_id', $product->id)->pluck('image_url');
-            $imagesUrls = [];
-
-            foreach ($productImagesUrls as $productImageUrl) {
-                $imagesUrls[] = asset("storage/{$productImageUrl}");
-            }
-        
-            $region = $product->region->parent->name ?? 'Unknown Region';
-            $subregion = $product->region->name ?? 'Unknown Subregion';
-            $phone = $product->user->profile->phone ?? 'No Phone Number Provided';
-        
-            $instaMessage = "
-            📢 Объявление: {$product->name}
-        
-            📝 Описание: {$product->description}
-        
-            📍 Регион: {$region}, {$subregion}
-        
-            👤 Контактное лицо: {$product->user->name}
-        
-            📞 Номер телефона: {$phone}
-        
-            🌍 Карта: Местоположение в Google Maps: https://www.google.com/maps?q={$product->latitude},{$product->longitude}
-        
-            🌍 Карта: Местоположение в Yandex Maps: https://yandex.ru/maps/?ll={$product->longitude},{$product->latitude}&z=17&l=map&pt={$product->longitude},{$product->latitude},pm2rdm
-        
-            🔗 Подробнее по ссылке: https://biztorg/obyavlenie/{$product->slug}
-            ";
-        
-            $this->instagramService->createCarouselPost($instaMessage, $imagesUrls);
-        
-        } catch (\Exception $e) {
-            Log::error("Failed to send Instagram post: " . $e->getMessage());
-        }
-        
-        
        
-    });
+
+            if ($user->isShop) {
+                $shopProfile = ShopProfile::where('user_id', $user->id)->first();
+                if ($shopProfile) {
+                    $subscribers = $shopProfile->subscribers()->get();
+
+                    if ($subscribers->isNotEmpty()) {
+                        $firstImageUrl = !empty($imagePaths) ? asset("storage/{$imagePaths[0]}") : '';
+
+                        $notificationTitle = "{$shopProfile->shop_name} опубликовал новое объявление";
+                        $notificationBody = \Str::limit("{$product->name} - {$product->description}", 300, '...');
+
+                        $senderId = $user->id;
+                        $shopName = $shopProfile->shop_name;
+                        $productName = $product->name;
+                        $productDescription = $product->description;
+                        $shopImageString = $user->shopProfile->profile_url;
+                        $shopImageMain = asset("storage/{$shopImageString}");
+
+                        foreach ($subscribers as $index => $subscriber) {
+                            if ($subscriber->fcm_token) {
+                                SendFcmNotification::dispatch(
+                                    $product->id,
+                                    $notificationTitle,
+                                    $notificationBody,
+                                    $subscriber->fcm_token,
+                                    $firstImageUrl,
+                                    $senderId,
+                                    $shopName,
+                                    $productName,
+                                    $productDescription,
+                                    $subscriber->id,
+                                    $shopImageMain,
+                                );
+
+                                \Log::info("✅ Queued FCM notification for subscriber ID: {$subscriber->id}");
+                            } else {
+                                \Log::warning("⚠️ No FCM token for subscriber ID: {$subscriber->id}");
+                            }
+                        }
+                    } else {
+                        \Log::info("ℹ️ No subscribers found for shop user ID: {$user->id}");
+                    }
+                } else {
+                    \Log::warning("⚠️ No ShopProfile found for user ID: {$user->id}");
+                }
+            }
+
+            // Dispatch social media posting job
+            $contactName = $user->isShop ? $user->shopProfile->contact_name : $product->user->name;
+            $contactPhone = $user->isShop ? $user->shopProfile->phone : $product->user->profile->phone;
+
+
+            $isShop = $user->isShop;
+
+            $determineShopName = null;
+
+            if ($user->isShop) {
+    $shopProfile = ShopProfile::where('user_id', $user->id)->first();
+    if ($shopProfile) {
+        $determineShopName = $shopProfile->shop_name;
+    }
+}
+
+            // $images = ProductImage::where('product_id', $product->id)
+            //     ->pluck('image_url')
+            //     ->map(function ($path) {
+            //         return asset("storage/{$path}");
+            //     })->toArray();
+
+            $images = [];
+            if (!empty($imagePaths)) {
+                $images = ProductImage::where('product_id', $product->id)
+                    ->pluck('image_url')
+                    ->map(function ($path) {
+                        return "https://coffective.com/wp-content/uploads/2018/06/default-featured-image.png.jpg"; // Replace with actual public URL
+                    })->toArray();
+            } else {
+                $images = ["https://biztorg.uz/storage/categories/December2024/nFLC7qONERwJaN2oWksq.webp"];
+            }
+
+            PostToSocialMediaJob::dispatch($product, $contactName, $contactPhone, $images, $isShop, $determineShopName);
+        });
+
         return response()->json([
             'status' => 'success',
             'message' => 'Product is created',
@@ -548,12 +518,12 @@ INFO;
     }
 }
 
-public function getProduct($productId)
+public function getProduct(Request $request, $productId)
 {
     $cacheKey = 'product_data_' . $productId;
 
-    $data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($productId) {
-        $product = Product::with(['images', 'region'])->where('id', $productId)->firstOrFail();
+    $data = Cache::remember($cacheKey, now()->addMinutes(1), function () use ($productId, $request) {
+        $product = Product::with(['images', 'region.parent'])->where('id', $productId)->firstOrFail();
         $user = $product->user;
         $profile = $product->user->profile;
 
@@ -566,7 +536,7 @@ public function getProduct($productId)
         }])->get();
 
         $userProducts = $user->products()
-            ->with(['images', 'region'])
+            ->with(['images', 'region.parent'])
             ->where('id', '!=', $product->id)
             ->latest()
             ->limit(10)
@@ -578,7 +548,7 @@ public function getProduct($productId)
                     'currency' => $product->currency,
                     'latitude' => $product->latitude,
                     'longitude' => $product->longitude,
-                    'region' => $product->region->name,
+                    'region' => $product->parentRegion->name ?? $product->region->name ?? null,
                     'type' => $product->type,
                     'name' => $product->name,
                     'created_at' => $product->created_at,
@@ -589,7 +559,7 @@ public function getProduct($productId)
                 ];
             });
 
-        $sameProducts = Product::with(['images', 'region'])
+        $sameProducts = Product::with(['images', 'region.parent'])
             ->where('subcategory_id', $product->subcategory->id)
             ->where('id', '!=', $product->id)
             ->whereNotIn('id', $user->products->pluck('id')->toArray())
@@ -603,7 +573,7 @@ public function getProduct($productId)
                     'currency' => $product->currency,
                     'latitude' => $product->latitude,
                     'longitude' => $product->longitude,
-                    'region' => $product->region->name,
+                    'region' => $product->parentRegion->name ?? $product->region->name ?? null,
                     'type' => $product->type,
                     'name' => $product->name,
                     'created_at' => $product->created_at,
@@ -617,13 +587,118 @@ public function getProduct($productId)
                 ];
             });
 
+        $productCount = $user->products()->count();
+
+        $productData = [
+            'id' => $product->id,
+            'subcategory_id' => $product->subcategory_id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'description' => $product->description,
+            'price' => $product->price,
+            'currency' => $product->currency,
+            'created_at' => $product->created_at,
+            'updated_at' => $product->updated_at,
+            'type' => $product->type,
+            'region_id' => $product->region_id,
+            'user_id' => $product->user_id,
+            'latitude' => $product->latitude,
+            'longitude' => $product->longitude,
+            'name_tsvector' => $product->name_tsvector,
+            'description_tsvector' => $product->description_tsvector,
+            'slug_tsvector' => $product->slug_tsvector,
+            'images' => $product->images->map(function ($image) {
+                return ['image_url' => $image->image_url];
+            })->toArray(),
+            'region' => $product->parentRegion->name . ' - ' .  $product->region->name,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'avatar' => $user->avatar,
+                'role_id' => $user->role_id,
+                'settings' => $user->settings,
+                'google_id' => $user->google_id,
+                'facebook_id' => $user->facebook_id,
+                'telegram_id' => $user->telegram_id,
+                'fcm_token' => $user->fcm_token,
+                'profile' => $profile ? [
+                    'id' => $profile->id,
+                    'user_id' => $profile->user_id,
+                    'phone' => $profile->phone,
+                    'region_id' => $profile->region_id,
+                    'address' => $profile->address,
+                    'avatar' => $profile->avatar,
+                    'created_at' => $profile->created_at,
+                    'updated_at' => $profile->updated_at,
+                    'latitude' => $profile->latitude,
+                    'longitude' => $profile->longitude,
+                ] : null,
+                'products' => $user->products->map(function ($prod) {
+                    return [
+                        'id' => $prod->id,
+                        'subcategory_id' => $prod->subcategory_id,
+                        'name' => $prod->name,
+                        'slug' => $prod->slug,
+                        'description' => $prod->description,
+                        'price' => $prod->price,
+                        'currency' => $prod->currency,
+                        'created_at' => $prod->created_at,
+                        'updated_at' => $prod->updated_at,
+                        'type' => $prod->type,
+                        'region_id' => $prod->region_id,
+                        'user_id' => $prod->user_id,
+                        'latitude' => $prod->latitude,
+                        'longitude' => $prod->longitude,
+                        'name_tsvector' => $prod->name_tsvector,
+                        'description_tsvector' => $prod->description_tsvector,
+                        'slug_tsvector' => $prod->slug_tsvector,
+                    ];
+                })->toArray(),
+            ],
+            'subcategory' => [
+                'id' => $product->subcategory->id,
+                'category_id' => $product->subcategory->category_id,
+                'name' => $product->subcategory->name,
+                'slug' => $product->subcategory->slug,
+                'created_at' => $product->subcategory->created_at,
+                'updated_at' => $product->subcategory->updated_at,
+            ],
+        ];
+
+        $shopProfile = null;
+
+        if($user->isShop) {
+            $shopProfile = $user->shopProfile;
+        }
+
+        $accessingUser = $request->query('user_id');
+
+        $isAlreadySubscriber = false;
+
+        $hasAlreadyRated = false;
+
+        if($request->query('user_id') != null && $user->isShop) {
+            $isAlreadySubscriber = $user->shopProfile->subscribers()->where('user_id', $request->query('user_id'))->exists();
+            $hasAlreadyRated = $user->shopProfile->raters()->where('user_id', $request->query('user_id'))->exists();
+        }
+
+
         return [
-            'product'         => $product,
+            'shopProfile'     => $shopProfile,
+            'isShop'          => $user->isShop ?? false,
+            'isAlreadySubscriber' => $isAlreadySubscriber,
+            'hasAlreadyRated' => $hasAlreadyRated,
+            'product'         => $productData,
             'userProducts'    => $userProducts,
             'sameProducts'    => $sameProducts,
             'user'            => $user,
             'profile'         => $profile,
             'attributes'      => $attributes,
+            'userProductCount' => $productCount,
         ];
     });
 
@@ -866,6 +941,12 @@ public function removeProduct(Request $request, $productId)
             ], 404);
         }
 
+       RemoveFromSocialMediaJob::dispatch(
+            $product->telegram_post_id,
+            $product->facebook_post_id,
+            $product->insta_post_id
+        );
+
         $product->delete();
 
         return response()->json([
@@ -923,106 +1004,116 @@ public function fetchSingleProduct($id) {
     ]);
 }
 
-public function updateProduct(Request $request, $id)
-{
-    $user = $request->user();
+ public function updateProduct(Request $request, $id)
+    {
+        $user = $request->user();
 
-    Log::info('Incoming Request Data:', [
-        'fields' => $request->all(),
-        'files' => $request->file(),
-        'headers' => $request->headers->all(),
-    ]);
-
-    try {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string|max:900',
-            'subcategory_id' => 'required|exists:subcategories,id',
-            'images' => 'nullable|array', // Images are optional for updates
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-            'attributes' => 'required|array|min:1',
-            'attributes.*' => 'integer|exists:attribute_values,id',
-            'price' => 'required|numeric|min:0',
-            'currency' => 'required|string|in:сум,доллар',
-            'type' => 'required|string|in:sale,purchase',
-            'child_region_id' => 'required|exists:regions,id',
+        // Log request data safely by excluding files
+        Log::info('Incoming Request Data:', [
+            'fields' => $request->except(['images']), // Exclude images to avoid serialization
+            'headers' => $request->headers->all(),
         ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error('Validation failed:', $e->errors());
-        return redirect()->back()->withErrors($e->errors());
-    }
 
-    Log::info('✅ Validated Data for Update:', $validatedData);
-
-    try {
-        // Use a database transaction to ensure data consistency
-        return DB::transaction(function () use ($validatedData, $request, $id, $user) {
-            // Find the product by ID
-            $product = Product::where('id', $id)
-                ->where('user_id', $user->id) // Ensure the user owns the product
-                ->firstOrFail();
-
-            // Generate a new slug based on the updated name
-            $slug = Str::slug($validatedData['name'], '-');
-
-            // Update the product fields
-            $product->update([
-                'name' => $validatedData['name'],
-                'slug' => $slug,
-                'subcategory_id' => $validatedData['subcategory_id'],
-                'description' => $validatedData['description'],
-                'price' => $validatedData['price'],
-                'currency' => $validatedData['currency'],
-                'latitude' => $validatedData['latitude'],
-                'longitude' => $validatedData['longitude'],
-                'type' => $validatedData['type'],
-                'region_id' => $validatedData['child_region_id'],
-                'user_id' => $user->id,
+        try {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string|max:900',
+                'subcategory_id' => 'required|exists:subcategories,id',
+                'images' => 'nullable|array',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+                'attributes' => 'required|array|min:1',
+                'attributes.*' => 'integer|exists:attribute_values,id',
+                'price' => 'required|numeric|min:0',
+                'currency' => 'required|string|in:сум,доллар',
+                'type' => 'required|string|in:sale,purchase',
+                'child_region_id' => 'required|exists:regions,id',
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed:', $e->errors());
+            return redirect()->back()->withErrors($e->errors());
+        }
 
-            // Handle new images (if any)
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    try {
-                        $path = $image->store('product-images', 'public');
-                        Log::info("✅ Image uploaded successfully to: $path");
+        // Prepare validated data for logging (exclude images)
+        $loggableData = array_diff_key($validatedData, array_flip(['images']));
+        Log::info('✅ Validated Data for Update:', $loggableData);
 
-                        ProductImage::create([
-                            'product_id' => $product->id,
-                            'image_url' => $path,
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::error("❌ Failed to upload image: " . $e->getMessage());
+        try {
+            return DB::transaction(function () use ($validatedData, $request, $id, $user) {
+                $product = Product::where('id', $id)
+                    ->where('user_id', $user->id)
+                    ->firstOrFail();
+
+                $slug = Str::slug($validatedData['name'], '-');
+
+                $product->update([
+                    'name' => $validatedData['name'],
+                    'slug' => $slug,
+                    'subcategory_id' => $validatedData['subcategory_id'],
+                    'description' => $validatedData['description'],
+                    'price' => $validatedData['price'],
+                    'currency' => $validatedData['currency'],
+                    'latitude' => $validatedData['latitude'],
+                    'longitude' => $validatedData['longitude'],
+                    'type' => $validatedData['type'],
+                    'region_id' => $validatedData['child_region_id'],
+                    'user_id' => $user->id,
+                ]);
+
+                $existingImages = $product->images->map(function ($image) {
+    return asset('storage/' . $image->image_url);
+})->toArray();
+
+                // Handle new images and store their paths
+                $newImagePaths = [];
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $image) {
+                        try {
+                            $path = $image->store('product-images', 'public');
+                            $fullUrl = asset('storage/' . $path); // Generate the full URL
+                            Log::info("✅ Image uploaded successfully to: $path");
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_url' => $path,
+                            ]);
+                            $newImagePaths[] = $fullUrl;
+                        } catch (\Exception $e) {
+                            Log::error("❌ Failed to upload image: " . $e->getMessage());
+                        }
                     }
+                } else {
+                    Log::info("⚠️ No new images were uploaded.");
                 }
-            } else {
-                Log::info("⚠️ No new images were uploaded.");
-            }
 
-           
-            $remainingImages = ProductImage::where('product_id', $product->id)->count();
-            if ($remainingImages === 0) {
-                throw new \Exception('Загрузите хотя бы одно изображение');
-            }
+$allImages = array_merge($existingImages, $newImagePaths);
+ Log::info("All images for update: ", $allImages);
 
-            // Update the product's attributes
-            $product->attributeValues()->sync($validatedData['attributes']);
+ 
 
+                // Update product's attributes
+                $product->attributeValues()->sync($validatedData['attributes']);
+
+                // Prepare data for the job, including new image URLs
+                $jobData = array_merge($validatedData, [
+                    'images' => $allImages, // Pass only the URLs, not UploadedFile objects
+                ]);
+
+                UpdateSocialMediaPostsJob::dispatch($product->id, $jobData);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Product updated successfully',
+                ], 200);
+            });
+        } catch (\Exception $e) {
+            Log::error('Product update failed: ' . $e->getMessage());
             return response()->json([
-                'status' => 'success',
-                'message' => 'Product updated successfully',
-            ], 200);
-        });
-    } catch (\Exception $e) {
-        Log::error('Product update failed: ' . $e->getMessage());
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to update product: ' . $e->getMessage(),
-        ], 500);
+                'status' => 'error',
+                'message' => 'Failed to update product: ' . $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
 public function deleteImage(Request $request, $id)
 {

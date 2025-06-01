@@ -13,7 +13,7 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
-        'subcategory_id', 'name', 'slug', 'description', 'price', 'currency', 'type', 'region_id', 'user_id', 'latitude', 'longitude'
+        'subcategory_id', 'facebook_post_id', 'telegram_post_id', 'insta_post_id', 'name', 'slug', 'description', 'price', 'currency', 'type', 'region_id', 'user_id', 'latitude', 'longitude'
     ];
 
     public function subcategory() {
@@ -39,7 +39,12 @@ class Product extends Model
     }
 
     public function region() {
-        return $this->belongsTo(Region::class, 'region_id');
+        return $this->belongsTo(Region::class, 'region_id')->withDefault();
+    }
+
+    public function getParentRegionAttribute() {
+        $region = $this->region;
+        return $region->parent ?: $region;
     }
 
     public function user() {

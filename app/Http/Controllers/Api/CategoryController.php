@@ -7,50 +7,118 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
 use Cache;
+use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller {
-    public function allCategories() {
-        $cacheKey = 'home_page_response';
-        $cacheDuration = 60 * 10;
+    public function homePage(Request $request)
+    {
+        try {
+            Log::info('homePage called', [
+                'categories' => $request->query('categories'),
+                'ad_type' => $request->query('ad_type')
+            ]);
 
-        return Cache::remember($cacheKey, $cacheDuration, function () {
-            try {
-                $categories = Cache::rememberForever('all_categories_forever', function() {
-                    return Category::all();
-                });
-                $slugs = ['transport', 'nedvizhimost', 'elektronika', 'detskij-mir', 'rabota', 'moda-i-stil', 'dom-i-sad', 'biznes-i-uslugi', 'dom-i-sad'];
-                $displayedCategories = Category::whereIn('slug', $slugs)
-        ->with(['subcategories.products.images', 'subcategories.products.region'])
-        ->get()
-        ->map(function ($category) {
-            $products = $category->subcategories->flatMap(function ($subcategory) {
-                return $subcategory->products;
-            })->take(30);
-    
-            $category->setRelation('products', $products);
-    
-            $category->unsetRelation('subcategories');
-    
-            return $category;
-        });
-    
-    
-                return response()->json([
-                    'categories' => $categories,
-                    'displayedCategories' => $displayedCategories,
-                ]);
-    
-            } catch(Exception $e) {
-                return response()->json([
-                    'error' => "Error fetching categories:" . $e
-                ], 500);
+            // Parse query parameters
+            $selectedCategoryIds = $request->query('categories', []);
+            if (is_string($selectedCategoryIds)) {
+                $selectedCategoryIds = array_filter(
+                    explode(',', $selectedCategoryIds),
+                    fn($id) => is_numeric($id) && $id !== ''
+                );
+            } elseif (is_array($selectedCategoryIds)) {
+                $selectedCategoryIds = array_filter(
+                    $selectedCategoryIds,
+                    fn($id) => is_numeric($id) && $id !== ''
+                );
+            } else {
+                $selectedCategoryIds = [];
             }
-        });
-        
+            $adType = $request->query('ad_type', 'all');
+
+            // Fetch categories
+            $categories = Category::get();
+            Log::info('Categories fetched', ['count' => $categories->count()]);
+
+            // Build product query
+            $productQuery = Product::query()
+                ->with([
+                    'images',
+                    'region' => function ($query) {
+                        $query->with('parent');
+                    }
+                ]);
+
+            // Apply time filter for ad_type == 'new'
+            if ($adType === 'new') {
+                $weekAgo = Carbon::now()->subDays(10);
+                $productQuery->where('created_at', '>=', $weekAgo);
+            }
+
+            // Apply sorting
+            $productQuery->orderBy('created_at', 'desc');
+
+            // Apply category filter if selectedCategoryIds is not empty
+            $products = collect();
+            if (!empty($selectedCategoryIds)) {
+                $filteredQuery = clone $productQuery;
+                $filteredQuery->whereHas('subcategory', function ($query) use ($selectedCategoryIds) {
+                    $query->whereIn('category_id', $selectedCategoryIds);
+                });
+                $products = $filteredQuery->take(30)->get();
+                Log::info('Filtered products fetched', ['count' => $products->count()]);
+            }
+
+            // If no products found with category filter, fetch products with base query
+            if (empty($selectedCategoryIds) || $products->isEmpty()) {
+                $products = $productQuery->take(30)->get();
+                Log::info('All products fetched (fallback)', ['count' => $products->count()]);
+            }
+
+            // Map products
+            $products = $products->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'currency' => $product->currency,
+                    'created_at' => $product->created_at,
+                    'region' => optional($product->region)->parent
+                        ? optional($product->region->parent)->name
+                        : optional($product->region)->name,
+                    'images' => $product->images->map(function ($image) {
+                        return ['image_url' => $image->image_url];
+                    })->toArray(),
+                    'isFromShop' => $product->user->isShop,
+                ];
+            });
+
+            Log::info('Products processed', ['count' => $products->count()]);
+
+            return response()->json([
+                'categories' => $categories,
+                'products' => $products,
+            ], 200);
+        } catch (Exception $e) {
+            Log::error('homePage error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Error fetching data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function fetchCategories() {
+        $categories = Category::get();
+
+        return response()->json([
+                'categories' => $categories,
+            ], 200);
     }
 
     public function fetchSubcategories($categoryId) {
@@ -157,7 +225,7 @@ class CategoryController extends Controller {
                     "(ts_rank(name_tsvector, to_tsquery('simple', ?)) + ts_rank(description_tsvector, to_tsquery('simple', ?)) + ts_rank(slug_tsvector, to_tsquery('simple', ?))) DESC",
                     [$tsQuery, $tsQuery, $tsQuery]
                 )
-                ->with(['images', 'region']);
+                ->with(['images', 'region.parent']);
     
             $fullTextProducts = $fullTextQuery->paginate($perPage, ['*'], 'page', $page);
     
@@ -190,7 +258,7 @@ class CategoryController extends Controller {
             $trigramProducts = $trigramQuery->whereRaw("($trigramConditionString)", $trigramBindings)
                 ->whereRaw("$trigramMaxSimilarityString >= ?", [$similarityThreshold])
                 ->orderByRaw("$trigramMaxSimilarityString DESC", $trigramOrderBindings)
-                ->with(['images', 'region'])
+                ->with(['images', 'region.parent'])
                 ->paginate($perPage, ['*'], 'page', $page);
     
             Log::info("Trigram search results: " . $trigramProducts->toJson());
@@ -219,14 +287,27 @@ class CategoryController extends Controller {
                 ['path' => $request->url()]
             );
     
-            Log::info("Combined search results: " . $combinedProducts->toJson());
+            // Map products to include parent region name with debug logging
+            $productsWithParentRegion = $paginatedProducts->getCollection()->map(function ($product) {
+                Log::info("Product ID: " . $product->id . ", Parent Region: " . json_encode($product->parentRegion));
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'currency' => $product->currency,
+                    'region' => $product->parentRegion->name ?? $product->region->name ?? null,
+                    'images' => $product->images->map(function ($image) {
+                        return ['image_url' => $image->image_url];
+                    })->toArray(),
+                ];
+            })->values();
     
-            // Log the SQL query
-            Log::info("SQL Query: " . json_encode(DB::getQueryLog()));
+            Log::info("Mapped products: " . json_encode($productsWithParentRegion));
     
+            // Manually construct the response to avoid default serialization
             return response()->json([
                 'success' => true,
-                'products' => $paginatedProducts->items(),
+                'products' => $productsWithParentRegion,
                 'pagination' => [
                     'current_page' => $paginatedProducts->currentPage(),
                     'last_page' => $paginatedProducts->lastPage(),
@@ -246,7 +327,6 @@ class CategoryController extends Controller {
         /**
          * Calculate trigram similarity (helper function for sorting)
          */
-        
     }
 
     private function similarity($string1, $string2)

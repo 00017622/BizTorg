@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Profile;
 use App\Models\Region;
+use App\Models\ShopProfile;
 use App\Models\User;
 use Cache;
 use Illuminate\Http\RedirectResponse;
@@ -63,7 +64,7 @@ class ProfileController extends Controller
     public function getUserDataJson($id)
 {
     $cacheKey = "user_data_{$id}";
-    $cacheDuration = 60 * 30; 
+    $cacheDuration = 1; 
 
     $userData = Cache::remember($cacheKey, $cacheDuration, function () use ($id) {
         $user = User::findOrFail($id);
@@ -74,11 +75,29 @@ class ProfileController extends Controller
         
         $userProfile = Profile::where('user_id', $id)->first();
         $region = $userProfile ? Region::where('id', $userProfile->region_id)->first() : null;
-        
+
+        $shopProfileData = [];
+
+        $myProfile = false;
+
+        $isAlreadySubscriber = false;
+
+        $hasAlreadyRated = false;
+
+        if ($user->isShop) {
+            $shopProfileData = $user->shopProfile;
+            $myProfile = $user->id == $user->shopProfile->user_id;
+            $isAlreadySubscriber = $user->shopProfile->subscribers()->where('user_id', $user->id)->exists();
+            $hasAlreadyRated = $user->shopProfile->raters()->where('user_id', $user->id)->exists();
+        }
+
         return [
             'user' => $user,
             'user_profile' => $userProfile,
             'region' => $region,
+            'isShop' => $user->isShop,
+            'isAlreadySubscriber' => $isAlreadySubscriber,
+            'hasAlreadyRated' => $hasAlreadyRated,
         ];
     });
 

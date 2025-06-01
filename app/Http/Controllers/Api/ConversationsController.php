@@ -16,24 +16,12 @@ class  ConversationsController extends Controller {
     public function getChats(Request $request)
 {
     try {
-        // Log the token for debugging
         $token = $request->bearerToken();
-        Log::info('Authorization token received in getChats', ['token' => $token]);
 
-        // Fetch the authenticated user
         $authenticatedUser = $request->user();
-        Log::info('Authenticated user in getChats', [
-            'user_id' => $authenticatedUser ? $authenticatedUser->id : 'null',
-            'user_exists' => $authenticatedUser ? true : false,
-            'user_type' => $authenticatedUser ? get_class($authenticatedUser) : 'null',
-            'user_data' => $authenticatedUser ? $authenticatedUser->toArray() : 'null',
-        ]);
-
-        // Check if the user is authenticated
+       
         if (!$authenticatedUser || !($authenticatedUser instanceof \App\Models\User) || !$authenticatedUser->exists || $authenticatedUser->id <= 0) {
-            Log::warning('User is not authenticated or invalid in getChats', [
-                'user_id' => $authenticatedUser ? $authenticatedUser->id : 'null',
-            ]);
+           
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthenticated',
@@ -41,20 +29,7 @@ class  ConversationsController extends Controller {
             ], 401);
         }
 
-        // Debug the authenticated user's ID
-        Log::info('Authenticated user ID in getChats', [
-            'id' => $authenticatedUser->id,
-            'id_type' => gettype($authenticatedUser->id),
-        ]);
-
-        // Fetch the user from the database
-        Log::info('Attempting to fetch user from database in getChats', ['user_id' => $authenticatedUser->id]);
         $user = User::findOrFail($authenticatedUser->id);
-        Log::info('User fetched from database in getChats', ['user_id' => $user->id]);
-
-        // Fetch the user's conversations with related user data
-        Log::info('Fetching conversations for user in getChats', ['user_id' => $user->id]);
-        \DB::enableQueryLog(); // Enable query logging
 
         $conversations = Conversation::where('user_one_id', $user->id)
             ->orWhere('user_two_id', $user->id)
@@ -102,11 +77,33 @@ class  ConversationsController extends Controller {
                     $datePart = $date->format('d.m.y');
                     $lastMessageDate = "$russianDayName $datePart";
                 }
-                // Debug the profile data
+ 
                 Log::info('Profile data for user', [
                     'user_id' => $otherUser->id,
                     'profile' => $otherUser->profile ? $otherUser->profile->toArray() : null,
                 ]);
+
+            
+
+                $otherUserInfo = User::findOrFail($otherUser->id);
+
+                $shopProfile = null;
+
+                $isShop = $otherUserInfo->isShop;
+
+                $userProfile = $otherUserInfo->profile;
+
+                 $isAlreadySubscriber = false;
+
+                 $hasAlreadyRated = false;
+
+
+
+                if ($otherUserInfo->isShop) {
+                    $shopProfile = $otherUserInfo->shopProfile;
+                    $isAlreadySubscriber = $otherUserInfo->shopProfile->subscribers()->where('user_id', $user->id)->exists();
+                    $hasAlreadyRated = $otherUserInfo->shopProfile->raters()->where('user_id', $user->id)->exists();
+                }
 
                 return [
                     'id' => $conversation->id,
@@ -120,6 +117,11 @@ class  ConversationsController extends Controller {
                     'last_message' => $lastMessageContent,
                     'last_message_date' => $lastMessageDate,
                     'avatar' => $avatar,
+                    'isShop' => $isShop,
+                    'shopProfile' => $shopProfile,
+                    'userProfile' => $userProfile,
+                    'isAlreadySubscriber' => $isAlreadySubscriber,
+                    'hasAlreadyRated' => $hasAlreadyRated,
                 ];
             });
 
@@ -127,6 +129,8 @@ class  ConversationsController extends Controller {
         \DB::disableQueryLog();
 
         Log::info('Fetched conversations in getChats', ['conversations' => $conversations->toArray()]);
+
+
 
         return response()->json([
             'status' => 'success',

@@ -20,8 +20,16 @@ class MessagesController extends Controller {
         try {
             $validatedData = $request->validate([
                 'receiver_id' => 'required|exists:users,id',
-                'message' => 'required|string',
+                'message' => 'nullable|string',
+                'image_url' => 'nullable|string',
             ]);
+
+            if (empty($validatedData['message']) && empty($validatedData['image_url'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Message or image is required',
+            ], 422);
+        }
         
             $sender_id = $request->user()->id;
             $receiver_id = $validatedData['receiver_id'];
@@ -47,7 +55,8 @@ class MessagesController extends Controller {
             $message = Message::create([
                 'conversation_id' => $conversation->id,
                 'sender_id' => $sender_id,
-                'message' => $validatedData['message'],
+                'message' => $validatedData['message'] ?? '',
+                'image_url' => $validatedData['image_url'],
             ]);
     
             $sender = User::find(Auth::id());
@@ -115,5 +124,25 @@ class MessagesController extends Controller {
             'message'  => 'Messages fetched successfully.',
             'messages' => $messages,
         ]);
+    }
+
+    public function uploadChatImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('chat_images', 'public');
+            return response()->json([
+                'success' => true,
+                'image_url' => $path,
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No image uploaded',
+        ], 400);
     }
 }
