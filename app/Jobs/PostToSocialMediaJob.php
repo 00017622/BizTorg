@@ -90,9 +90,9 @@ INFO;
 🌐 Подробнее по ссылке: https://biztorg.uz/obyavlenie/{$this->product->slug}
 ";
 
-            $shopLineTelegram = $this->isShop && $this->shopName ? "\n🏪 <b>Магазин:</b> {$this->shopName}" : '';
-            $shopLineFacebook = $this->isShop && $this->shopName ? "\n🏪 Магазин: {$this->shopName}" : '';
-            $shopLineInstagram = $this->isShop && $this->shopName ? "\n🏪 Магазин: {$this->shopName}" : '';
+            $shopLineTelegram = $this->isShop && $this->shopName ? "\n🏪 <b>Магазин:</b> {$this->shopName}\n" : '';
+            $shopLineFacebook = $this->isShop && $this->shopName ? "\n🏪 Магазин: {$this->shopName}\n" : '';
+            $shopLineInstagram = $this->isShop && $this->shopName ? "\n🏪 Магазин: {$this->shopName}\n" : '';
 
             $productInfo = $messageStartTelegram . $shopLineTelegram . $telegramEnd;
             $facebookProductInfo = $messageStartFacebookInstagram . $shopLineFacebook . $facebookEnd;
