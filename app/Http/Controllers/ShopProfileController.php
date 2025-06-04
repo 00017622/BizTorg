@@ -106,8 +106,8 @@ class ShopProfileController extends Controller
                 'telegram_link' => 'nullable|string|max:300',
                 'instagram_link' => 'nullable|string|max:300',
                 'website' => 'nullable|string',
-                'latitude' => 'nullable|numeric|between:-90,90',
-                'longitude' => 'nullable|numeric|between:-180,180',
+                'latitude' => 'nullable|sometimes|numeric|between:-90,90',
+                'longitude' => 'nullable|sometimes|numeric|between:-180,180',
             ]);
 
             Log::info('Shop Profile update attempt', [
@@ -130,8 +130,8 @@ class ShopProfileController extends Controller
                 'telegram_link' => $validatedData['telegram_link'],
                 'instagram_link' => $validatedData['instagram_link'],
                 'website' => $validatedData['website'],
-                'latitude' => $validatedData['latitude'],
-                'longitude' => $validatedData['longitude'],
+                'latitude' => $validatedData['latitude'] ?? null,
+                'longitude' => $validatedData['longitude'] ?? null,
             ]);
 
             Log::info('ShopProfile created successfully', [
