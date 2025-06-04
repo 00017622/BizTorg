@@ -28,8 +28,8 @@ class ShopProfileController extends Controller
                 'telegram_link' => 'nullable|string|max:300',
                 'instagram_link' => 'nullable|string|max:300',
                 'website' => 'nullable|string',
-                'latitude' => 'nullable|numeric|between:-90,90',
-                'longitude' => 'nullable|numeric|between:-180,180',
+                'latitude' => 'nullable|sometimes|numeric|between:-90,90',
+                'longitude' => 'nullable|sometimes|numeric|between:-180,180',
             ]);
 
             Log::info('Shop Profile creation attempt', [
@@ -64,8 +64,8 @@ class ShopProfileController extends Controller
                 'subscribers' => 0,
                 'total_reviews' => 0,
                 'views' => 0,
-                'latitude' => $validatedData['latitude'],
-                'longitude' => $validatedData['longitude'],
+                'latitude' => $validatedData['latitude'] ?? null,
+                'longitude' => $validatedData['longitude'] ?? null,
             ]);
     
             $user->update(['isShop' => true]);
