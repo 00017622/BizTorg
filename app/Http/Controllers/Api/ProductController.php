@@ -601,7 +601,7 @@ public function createProduct(Request $request)
             'name_tsvector' => $product->name_tsvector,
             'description_tsvector' => $product->description_tsvector,
             'slug_tsvector' => $product->slug_tsvector,
-            'showNumber' => $product->show_number,
+            'showNumber' => $product->showNumber,
             'number' => $product->number,
             'images' => $product->images->map(function ($image) {
                 return ['image_url' => $image->image_url];

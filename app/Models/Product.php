@@ -13,7 +13,7 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
-        'subcategory_id', 'facebook_post_id', 'telegram_post_id', 'insta_post_id', 'name', 'slug', 'description', 'price', 'currency', 'type', 'region_id', 'user_id', 'latitude', 'longitude'
+        'subcategory_id', 'showNumber', 'number', 'facebook_post_id', 'telegram_post_id', 'insta_post_id', 'name', 'slug', 'description', 'price', 'currency', 'type', 'region_id', 'user_id', 'latitude', 'longitude'
     ];
 
     public function subcategory() {
