@@ -367,6 +367,8 @@ public function createProduct(Request $request)
         'currency' => 'required|string|in:сум,доллар',
         'type' => 'required|string|in:sale,purchase',
         'child_region_id' => 'required|exists:regions,id',
+        'showNumber' => 'required|boolean',
+        'number' => 'nullable|string|regex:/^\+998\d{9}$/|max:15',
     ]);
 
     Log::info('✅ Validated Data:', $validatedData);
@@ -387,12 +389,12 @@ public function createProduct(Request $request)
                 'type' => $validatedData['type'],
                 'region_id' => $validatedData['child_region_id'],
                 'user_id' => $validatedData['uuid'],
+                'showNumber' => $validatedData['showNumber'],
+                'number' => $validatedData['number'],
             ]);
 
-            // Initialize an array to store image paths
             $imagePaths = [];
 
-            // Handle image uploads
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     try {
