@@ -515,11 +515,8 @@ public function createProduct(Request $request)
     }
 }
 
-public function getProduct(Request $request, $productId)
-{
-    $cacheKey = 'product_data_' . $productId;
-
-    $data = Cache::remember($cacheKey, now()->addMinutes(1), function () use ($productId, $request) {
+ public function getProduct(Request $request, $productId)
+    {
         $product = Product::with(['images', 'region.parent'])->where('id', $productId)->firstOrFail();
         $user = $product->user;
         $profile = $product->user->profile;
@@ -604,6 +601,8 @@ public function getProduct(Request $request, $productId)
             'name_tsvector' => $product->name_tsvector,
             'description_tsvector' => $product->description_tsvector,
             'slug_tsvector' => $product->slug_tsvector,
+            'showNumber' => $product->show_number,
+            'number' => $product->number,
             'images' => $product->images->map(function ($image) {
                 return ['image_url' => $image->image_url];
             })->toArray(),
@@ -683,8 +682,7 @@ public function getProduct(Request $request, $productId)
             $hasAlreadyRated = $user->shopProfile->raters()->where('user_id', $request->query('user_id'))->exists();
         }
 
-
-        return [
+        $data = [
             'shopProfile'     => $shopProfile,
             'isShop'          => $user->isShop ?? false,
             'isAlreadySubscriber' => $isAlreadySubscriber,
@@ -697,10 +695,9 @@ public function getProduct(Request $request, $productId)
             'attributes'      => $attributes,
             'userProductCount' => $productCount,
         ];
-    });
 
-    return response()->json($data);
-}
+        return response()->json($data);
+    }
 
 public function toggleFavorites(Request $request)
 {
