@@ -390,7 +390,7 @@ public function createProduct(Request $request)
                 'region_id' => $validatedData['child_region_id'],
                 'user_id' => $validatedData['uuid'],
                 'showNumber' => $validatedData['showNumber'],
-                'number' => $validatedData['number'],
+                'number' => data_get($validatedData, 'number'),
             ]);
 
             $imagePaths = [];
