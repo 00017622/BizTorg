@@ -126,7 +126,12 @@ public function createProduct(Request $request)
             }
             
 
-            $product->attributeValues()->sync($validatedData['attributes']);
+            if(isset($validatedData['attributes']) && is_array($validatedData['attributes'])) {
+                $product->attributeValues()->sync($validatedData['attributes']);
+            } else {
+                Log::info("ℹ️ No attributes provided for product ID: {$product->id}");
+            }
+           
 
             $productInfo = <<<INFO
 📢 <b>Объявление:</b> {$product->name}
@@ -392,7 +397,11 @@ public function editProduct(Request $request) {
                 }
             }
 
-            $product->attributeValues()->sync($validatedData['attributes']);
+            if(isset($validatedData['attributes']) && is_array($validatedData['attributes'])) {
+                $product->attributeValues()->sync($validatedData['attributes']);
+            } else {
+                Log::info("ℹ️ No attributes provided for product ID: {$product->id}");
+            }
         });
 
         return redirect(route('profile.products'))->with('success', 'Product updated successfully!');

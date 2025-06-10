@@ -414,7 +414,13 @@ public function createProduct(Request $request)
                 Log::warning("⚠️ No images were uploaded.");
             }
 
-            $product->attributeValues()->sync($validatedData['attributes']);
+
+            if(isset($validatedData['attributes']) && is_array($validatedData['attributes'])) {
+                $product->attributeValues()->sync($validatedData['attributes']);
+            } else {
+                Log::info("ℹ️ No attributes provided for product ID: {$product->id}");
+            }
+           
 
 
 
@@ -1081,7 +1087,13 @@ $allImages = array_merge($existingImages, $newImagePaths);
  
 
                 // Update product's attributes
+                
+            if(isset($validatedData['attributes']) && is_array($validatedData['attributes'])) {
                 $product->attributeValues()->sync($validatedData['attributes']);
+            } else {
+                Log::info("ℹ️ No attributes provided for product ID: {$product->id}");
+            }
+              
 
                 // Prepare data for the job, including new image URLs
                 $jobData = array_merge($validatedData, [
