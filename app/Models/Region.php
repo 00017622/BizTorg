@@ -8,7 +8,7 @@ class Region extends Model
 {
     protected $fillable = ['name', 'parent_id'];
 
-    public function parent() {
+    public function parentId() {
         return $this->belongsTo(Region::class, 'parent_id');
     }
 
