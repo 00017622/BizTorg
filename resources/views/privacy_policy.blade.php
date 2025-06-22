@@ -71,9 +71,8 @@
         <h2 class="section-title text-2xl md:text-3xl font-semibold text-gray-800 mt-8 mb-4">8. Контакты</h2>
         <p class="text text-base md:text-lg text-gray-700 mb-4">Если у вас есть вопросы или предложения по поводу данной Политики конфиденциальности, свяжитесь с нами:</p>
         <ul class="contact-list list-none pl-0 mb-4">
-            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Название компании:</strong> BizTorg</li>
-            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Email:</strong> biztorgadmin@gmail.com</li>
-            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Телефон:</strong></li>
+            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Название компании:</strong> SHORTWAY</li>
+            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Email:</strong> shortway.technology@gmail.com</li>
             <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Адрес:</strong> Uzbekistan/Tashkent</li>
         </ul>
 
@@ -151,9 +150,8 @@
         <h2 class="section-title text-2xl md:text-3xl font-semibold text-gray-800 mt-8 mb-4">8. Contact Information</h2>
         <p class="text text-base md:text-lg text-gray-700 mb-4">If you have questions or suggestions regarding this Privacy Policy, please contact us:</p>
         <ul class="contact-list list-none pl-0 mb-4">
-            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Company Name:</strong> BizTorg</li>
-            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Email:</strong> biztorgadmin@gmail.com</li>
-            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Phone:</strong></li>
+            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Company Name:</strong> SHORTWAY</li>
+            <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Email:</strong> shortway.technology@gmail.com</li>
             <li class="contact-item text-base md:text-lg text-gray-700 mb-2"><strong class="text-gray-900">Address:</strong> Uzbekistan/Tashkent</li>
         </ul>
 
