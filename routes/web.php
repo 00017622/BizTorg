@@ -74,7 +74,7 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/obyavlenie/{slug}', [ProductController::class, 'getProduct'])->name('product.get');
 Route::delete('/product/image/{id}', [ProductController::class, 'deleteImage'])->name('product.image.delete');
-Route::get('/privacy-policy', function () {
+Route::get('/privacy-policy-document', function () {
     return view('privacy_policy');
 });
 
