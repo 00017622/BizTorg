@@ -84,6 +84,10 @@ Route::get('/pages-facebook', function () {
 
 Route::get('/sitemap.xml', [SitemapController::class, 'generateSitemap']);
 
+Route::get('/get-paginated-products', [IndexController::class, 'getPaginatedProducts'])->name('products.paginate');
+
+Route::get('/category/{slug}/filter', [CategoryController::class, 'filterProducts'])->name('category.filter');
+
 require __DIR__ . '/auth.php';
 
 use App\Models\Product;

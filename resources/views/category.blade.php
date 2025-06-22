@@ -15,13 +15,87 @@
 @section('title', 'Категория: ' . $category->name . (isset($selectedSubcategory) ? ' - ' . $selectedSubcategory->name : ''))
 @extends('layouts.app')
 @section('main')
-@include('components.filters')
+    @include('components.filters')
 
-<section class="px-8">
-@include('components.card')
-</section>
+    <section class="px-8" id="productSection">
+        @include('components.card')
+    </section>
 
-<div class="pagination flex justify-center mt-8">
-    {{ $products->appends(request()->query())->links('vendor.pagination.custom-pagination') }}
-</div>
+    <div class="pagination flex justify-center mt-8" id="pagination">
+        <button id="loadMore" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600" style="display: {{ $products->hasMorePages() ? 'block' : 'none' }}">
+            Загрузить еще
+        </button>
+    </div>
+
+    <script>
+        // Initialize filter state
+        let filters = {
+            subcategory: '{{ request()->input("subcategory") ?? "" }}',
+            region: '{{ request()->input("region") ?? "" }}',
+            city: '{{ request()->input("city") ?? "" }}',
+            price_from: '{{ request()->input("price_from") ?? "" }}',
+            price_to: '{{ request()->input("price_to") ?? "" }}',
+            currency: '{{ request()->input("currency") ?? "usd" }}',
+            type: '{{ request()->input("type") ?? "" }}',
+            date_filter: '{{ request()->input("date_filter") ?? "" }}',
+            search: '{{ request()->input("search") ?? "" }}',
+            attributes: {}
+        };
+
+        // Event listeners for filter selections
+        document.querySelectorAll('[data-filter]').forEach(element => {
+            element.addEventListener('click', (e) => {
+                const filter = e.target.getAttribute('data-filter');
+                const value = e.target.getAttribute('data-value');
+                if (filter.startsWith('attribute_')) {
+                    filters.attributes[filter] = value;
+                } else {
+                    filters[filter] = value;
+                }
+            });
+        });
+
+        // Apply filters button event
+        document.getElementById('applyFilters').addEventListener('click', () => {
+            fetchProducts(5);
+        });
+
+        // Load more button event
+        document.getElementById('loadMore').addEventListener('click', () => {
+            const nextPage = parseInt(document.getElementById('loadMore').getAttribute('data-next-page')) || 2;
+            fetchProducts(nextPage);
+        });
+
+        // Fetch products function
+        function fetchProducts(page) {
+            const url = new URL(`{{ route("category.filter", $category->slug) }}?page=${page}`);
+            Object.keys(filters).forEach(key => {
+                if (key === 'attributes' && Object.keys(filters.attributes).length > 0) {
+                    Object.entries(filters.attributes).forEach(([attrKey, attrValue]) => {
+                        url.searchParams.append(attrKey, attrValue);
+                    });
+                } else if (filters[key] !== '' && key !== 'attributes') {
+                    url.searchParams.append(key, filters[key]);
+                }
+            });
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                    return;
+                }
+                document.getElementById('productSection').innerHTML = data.products;
+                document.getElementById('loadMore').style.display = data.has_more ? 'block' : 'none';
+                document.getElementById('loadMore').setAttribute('data-next-page', data.next_page);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 @endsection
