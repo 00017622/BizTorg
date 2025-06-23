@@ -59,15 +59,13 @@
         @endforelse
     </section>
 
-    <!-- Load More Button -->
-    @if ($products->hasMorePages())
-        <div class="text-center">
-            <button id="load-more" class="bg-[#3A78FF] text-white px-8 py-2 rounded-xl flex items-center justify-center mx-auto min-w-[200px]">
-                <span class="button-text">Показать еще</span>
-                <span class="ml-2 loading-spinner hidden w-5 h-5 border-4 border-t-transparent border-white rounded-full animate-spin"></span>
-            </button>
-        </div>
-    @endif
+    <!-- Load More Button (always present initially) -->
+    <div class="text-center">
+        <button id="load-more" class="bg-[#3A78FF] text-white px-8 py-2 rounded-xl flex items-center justify-center mx-auto min-w-[200px]">
+            <span class="button-text">Показать еще</span>
+            <span class="ml-2 loading-spinner hidden w-5 h-5 border-4 border-t-transparent border-white rounded-full animate-spin"></span>
+        </button>
+    </div>
 </section>
 
 <script>
@@ -82,6 +80,8 @@
         });
 
         const loadMoreButton = document.getElementById('load-more');
+        let lastPage = {{ $products->lastPage() }}; // Initial last page from Blade
+
         if (loadMoreButton) {
             console.log('Load More button found');
             loadMoreButton.addEventListener('click', function () {
@@ -111,10 +111,10 @@
                 })
                 .then(data => {
                     console.log('Fetched data:', data);
-                    if (data.products.length > 0) {
+                    if (data.products && data.products.length > 0) {
                         const productGrid = document.getElementById('product-grid');
                         data.products.forEach(product => {
-                            const currency = '{{ request()->input('currency') ?: 'default' }}'; // Default currency from initial request
+                            const currency = '{{ request()->input('currency') ?: 'default' }}';
                             const priceHtml = currency === 'uzs' ? 
                                 (product.currency === 'сум' ? `${number_format(product.price, 2, '.', ' ')} сум` : `${number_format(product.price * usdRate, 2, '.', ' ')} сум`) :
                                 (currency === 'usd' ? 
@@ -148,10 +148,10 @@
                             `;
                             productGrid.insertAdjacentHTML('beforeend', productHtml);
                         });
-                        if (page >= data.last_page) {
-                            loadMoreButton.style.display = 'none';
-                        }
-                    } else {
+                        // Update last_page from the API response
+                        lastPage = data.last_page;
+                    }
+                    if (page >= lastPage || (data.products && data.products.length === 0)) {
                         loadMoreButton.style.display = 'none';
                     }
                 })
