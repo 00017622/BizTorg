@@ -80,6 +80,7 @@
         });
 
         const loadMoreButton = document.getElementById('load-more');
+        let page = parseInt({{ $products->currentPage() }} || 1); // Start with the current page
         let lastPage = {{ $products->lastPage() }}; // Initial last page from Blade
 
         if (loadMoreButton) {
@@ -95,7 +96,7 @@
                 spinner.classList.remove('hidden');
                 buttonText.classList.add('hidden');
 
-                let page = parseInt({{ $products->currentPage() }} || 1) + 1;
+                page++; // Increment page before fetching
                 console.log(`Fetching page ${page}`);
                 fetch(`https://biztorg.uz/get-paginated-products?page=${page}&per_page=24`, {
                     headers: {
@@ -148,8 +149,9 @@
                             `;
                             productGrid.insertAdjacentHTML('beforeend', productHtml);
                         });
-                        // Update last_page from the API response
+                        // Update last_page and page from the API response
                         lastPage = data.last_page;
+                        page = data.current_page; // Sync with server’s current page
                     }
                     if (page >= lastPage || (data.products && data.products.length === 0)) {
                         loadMoreButton.style.display = 'none';
