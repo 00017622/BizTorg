@@ -97,7 +97,7 @@
 
                 let page = parseInt({{ $products->currentPage() }} || 1) + 1;
                 console.log(`Fetching page ${page}`);
-                fetch(`http://127.0.0.1:8000/get-paginated-products?page=${page}&per_page=24`, {
+                fetch(`https://biztorg.uz/get-paginated-products?page=${page}&per_page=24`, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }

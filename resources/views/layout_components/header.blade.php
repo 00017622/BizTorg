@@ -1,7 +1,7 @@
 <nav class="bg-white px-12 py-6 text-gray-800 flex items-center justify-between">
     <div class="flex items-center space-x-4">
         <a href="/" class="flex items-center space-x-2">
-            <h1 class="text-4xl">BizTorg</h1>
+            <h1 class="text-4xl">BizTorgUz</h1>
         </a>
     </div>
 
