@@ -7,7 +7,6 @@ use App\Models\Region;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Services\CurrencyService;
 
@@ -15,15 +14,24 @@ class CategoryController extends Controller
 {
     protected $currencyService;
 
-    public function __construct(CurrencyService $currencyService) {
+    public function __construct(CurrencyService $currencyService)
+    {
         $this->currencyService = $currencyService;
     }
 
     public function index($slug, Request $request)
     {
-        $usdRate = $this->currencyService->getDollarRate();
+        // Filter out empty query parameters
+        $query = array_filter($request->query(), fn($value) => $value !== '' && $value !== null);
+        $request->merge($query);
+
+        $usdRate = $this->currencyService->getDollarRate() ?: 12900; // Default to 12900 if rate is invalid
         $user = $request->user();
-        $category = Category::where('slug', $slug)->with('subcategories.products')->first();
+        $category = Category::where('slug', $slug)->with(['subcategories' => function ($query) {
+            $query->with(['products' => function ($query) {
+                $query->with('images', 'attributeValues.attributes');
+            }]);
+        }])->firstOrFail();
         $selectedSubcategory = null;
         $attributes = collect();
         $attributeValues = [];
@@ -32,118 +40,102 @@ class CategoryController extends Controller
         $selectedCity = null;
         $regionChildren = collect();
 
-        $productsQuery = Product::query();
-        
-        if ($category) {
-            if ($request->has('subcategory')) {
-                $selectedSubcategory = $category->subcategories->where('slug', $request->input('subcategory'))->first();
+        $productsQuery = Product::query()->with('images', 'attributeValues.attributes');
 
-                if ($selectedSubcategory) {
-                    $productsQuery->where('subcategory_id', $selectedSubcategory->id);
-                    $attributes = $selectedSubcategory->attributes()->get();
-                }
+        // Subcategory filtering
+        if ($request->has('subcategory') && $request->input('subcategory')) {
+            $selectedSubcategory = $category->subcategories->where('slug', $request->input('subcategory'))->first();
+            if ($selectedSubcategory) {
+                $productsQuery->where('subcategory_id', $selectedSubcategory->id);
+                $attributes = $selectedSubcategory->attributes()->with('attributeValues')->get();
+                Log::info('Subcategory filter applied', ['subcategory_id' => $selectedSubcategory->id, 'slug' => $request->input('subcategory')]);
             } else {
+                Log::warning('Subcategory not found', ['slug' => $request->input('subcategory')]);
                 $subcategoryIds = $category->subcategories->pluck('id')->toArray();
                 $productsQuery->whereIn('subcategory_id', $subcategoryIds);
             }
+        } else {
+            $subcategoryIds = $category->subcategories->pluck('id')->toArray();
+            $productsQuery->whereIn('subcategory_id', $subcategoryIds);
         }
 
+        // Attribute filtering
         foreach ($attributes as $attribute) {
             $values = $attribute->attributeValues()->get();
             $attributeValues[$attribute->id] = $values;
         }
 
-        $attributeFilters = Arr::except($request->query(), ['subcategory', 'currency', 'page', 'city', 'region', 'price_from', 'price_to', 'type', 'date_filter', 'with_images_only', 'search']);
+        $attributeFilters = Arr::except($request->query(), [
+            'subcategory', 'currency', 'page', 'city', 'region', 'price_from', 'price_to',
+            'type', 'date_filter', 'with_images_only', 'search'
+        ]);
 
         if (!empty($attributeFilters)) {
             foreach ($attributeFilters as $attributeSlug => $valueId) {
-                $productsQuery->whereHas('attributeValues', function ($query) use ($attributeSlug, $valueId) {
-                    $query->whereHas('attributes', function ($subQuery) use ($attributeSlug) {
-                        $subQuery->where('attributes.slug', $attributeSlug);
-                    })->where('attribute_values.id', $valueId);
-                });
+                if (is_numeric($valueId)) {
+                    $productsQuery->whereHas('attributeValues', function ($query) use ($attributeSlug, $valueId) {
+                        $query->whereHas('attributes', function ($subQuery) use ($attributeSlug) {
+                            $subQuery->where('attributes.slug', $attributeSlug);
+                        })->where('attribute_values.id', $valueId);
+                    });
+                    Log::info('Attribute filter applied', ['attribute' => $attributeSlug, 'value_id' => $valueId]);
+                }
             }
         }
 
-        if ($request->has('price_from') || $request->has('price_to')) {
-            $currency = $request->input('currency', 'usd');
-            if (!$usdRate || $usdRate <= 0) {
-                Log::info('USD Rate: USD rate not available');
-                $usdRate = 12900; 
-            }
-        
-            $priceFrom = round((float) $request->input('price_from', 0), 2);
-            $priceTo = round((float) $request->input('price_to', PHP_INT_MAX), 2);
-        
-            Log::info('Price From: ' . $priceFrom);
-            Log::info('Price To: ' . $priceTo);
-        
+        // Price filtering
+        $currency = $request->input('currency', 'usd');
+        $priceFrom = $request->has('price_from') && $request->input('price_from') !== '' ? (float) $request->input('price_from') : null;
+        $priceTo = $request->has('price_to') && $request->input('price_to') !== '' ? (float) $request->input('price_to') : null;
+
+        if ($priceFrom !== null || $priceTo !== null) {
             $productsQuery->where(function ($query) use ($priceFrom, $priceTo, $currency, $usdRate) {
-                $query->where(function ($q) use ($priceFrom, $priceTo, $currency, $usdRate) {
-                    if ($currency === 'usd') {
-                        $q->where(function ($usdQuery) use ($priceFrom, $priceTo) {
-                            $usdQuery->where('currency', 'доллар')
-                                     ->whereBetween('price', [$priceFrom, $priceTo]);
-                        })->orWhere(function ($uzsQuery) use ($priceFrom, $priceTo, $usdRate) {
-                            $uzsQuery->where('currency', 'сум')
-                                     ->whereBetween('price', [$priceFrom * $usdRate, $priceTo * $usdRate]);
-                        });
-                    } elseif ($currency === 'uzs') {
-                        $q->where(function ($uzsQuery) use ($priceFrom, $priceTo) {
-                            $uzsQuery->where('currency', 'сум')
-                                     ->whereBetween('price', [$priceFrom, $priceTo]);
-                        })->orWhere(function ($usdQuery) use ($priceFrom, $priceTo, $usdRate) {
-                            $usdQuery->where('currency', 'доллар')
-                                     ->whereBetween('price', [$priceFrom / $usdRate, $priceTo / $usdRate]);
-                        });
-                    }
-                });
+                $priceFrom = $priceFrom ?? 0;
+                $priceTo = $priceTo ?? PHP_INT_MAX;
+                if ($currency === 'usd') {
+                    $query->where(function ($q) use ($priceFrom, $priceTo) {
+                        $q->where('currency', 'доллар')->whereBetween('price', [$priceFrom, $priceTo]);
+                    })->orWhere(function ($q) use ($priceFrom, $priceTo, $usdRate) {
+                        $q->where('currency', 'сум')->whereBetween('price', [$priceFrom * $usdRate, $priceTo * $usdRate]);
+                    });
+                } elseif ($currency === 'uzs') {
+                    $query->where(function ($q) use ($priceFrom, $priceTo) {
+                        $q->where('currency', 'сум')->whereBetween('price', [$priceFrom, $priceTo]);
+                    })->orWhere(function ($q) use ($priceFrom, $priceTo, $usdRate) {
+                        $q->where('currency', 'доллар')->whereBetween('price', [$priceFrom / $usdRate, $priceTo / $usdRate]);
+                    });
+                }
             });
-        }
-        
-
-        if ($request->has('price_from') && $request->input('currency') === 'usd') {
-            $priceFrom = $request->input('price_from');
-
-            $productsQuery->where(function ($query) use ($usdRate, $priceFrom) {
-                $query->where(function ($q) use ($usdRate, $priceFrom) {
-                    $q->where('currency', 'доллар')->where('price', '>=', $priceFrom);
-                }) ->orWhere(function ($q) use($usdRate, $priceFrom) {
-                    $q->where('currency', 'сум')->where('price', '>=', $priceFrom * $usdRate);
-                });
-            });
+            Log::info('Price filter applied', ['currency' => $currency, 'price_from' => $priceFrom, 'price_to' => $priceTo]);
         }
 
-
-        if ($request->has('price_to') && $request->input('currency') === 'uzs') {
-            $priceTo = $request->input('price_to');
-
-            $productsQuery->where(function ($query) use ($priceTo, $usdRate) {
-                $query->where(function ($q) use($priceTo, $usdRate) {
-                    $q->where('currency', 'сум')->where('price', '<=', $priceTo);
-                }) ->orWhere(function ($q) use ($priceTo, $usdRate) {
-                    $q->where('currency', 'доллар')->where('price', '<=', $priceTo / $usdRate);
-                });
-            });
+        // Region and city filtering
+        if ($request->has('region') && $request->input('region') !== 'whole') {
+            $selectedRegion = Region::where('slug', $request->input('region'))->first();
+            if ($selectedRegion) {
+                $regionIds = array_merge([$selectedRegion->id], $selectedRegion->children()->pluck('id')->toArray());
+                $regionChildren = $selectedRegion->children;
+                $productsQuery->whereIn('region_id', $regionIds);
+                Log::info('Region filter applied', ['region_id' => $selectedRegion->id]);
+            }
         }
 
-        if ($request->has('price_to') && $request->input('currency') === 'usd') {
-            $priceTo = $request->input('price_to');
-
-            $productsQuery->where(function ($query) use($priceTo, $usdRate) {
-                $query->where(function ($q) use($priceTo, $usdRate) {
-                    $q->where('currency', 'доллар')->where('price', '<=', $priceTo);
-                }) ->orWhere(function ($q) use($priceTo, $usdRate) {
-                    $q->where('currency', 'сум')->where('price', '<=', $priceTo * $usdRate);
-                });
-            });
+        if ($request->has('city') && $request->input('city')) {
+            $selectedCity = Region::where('slug', $request->input('city'))->first();
+            if ($selectedCity) {
+                $productsQuery->where('region_id', $selectedCity->id);
+                Log::info('City filter applied', ['city_id' => $selectedCity->id]);
+            }
         }
 
-        if ($request->has('type')) {
+        // Type filtering
+        if ($request->has('type') && in_array($request->input('type'), ['purchase', 'sale'])) {
             $productsQuery->where('type', $request->input('type'));
+            Log::info('Type filter applied', ['type' => $request->input('type')]);
         }
 
-        if ($request->has('date_filter')) {
+        // Date filtering
+        if ($request->has('date_filter') && in_array($request->input('date_filter'), ['new', 'expensive', 'cheap'])) {
             switch ($request->input('date_filter')) {
                 case 'new':
                     $productsQuery->orderBy('created_at', 'desc');
@@ -155,155 +147,36 @@ class CategoryController extends Controller
                     $productsQuery->orderBy('price', 'asc');
                     break;
             }
+            Log::info('Date filter applied', ['date_filter' => $request->input('date_filter')]);
         }
 
+        // Image filtering
         if ($request->has('with_images_only') && $request->input('with_images_only') === 'yes') {
             $productsQuery->whereHas('images');
+            Log::info('Image filter applied');
         }
 
-        if ($request->has('search')) {
+        // Search filtering
+        if ($request->has('search') && $request->input('search')) {
             $input = $request->input('search');
-            $inputArray = explode(' ', strtolower($input));
-
+            $inputArray = explode(' ', strtolower(trim($input)));
             $productsQuery->where(function ($query) use ($inputArray) {
                 foreach ($inputArray as $word) {
-                    $query->orWhere('name', 'LIKE', "%$word%")
+                    $query->where('name', 'LIKE', "%$word%")
                           ->orWhere('description', 'LIKE', "%$word%");
                 }
             });
+            Log::info('Search filter applied', ['search' => $input]);
         }
 
-        if ($request->has('region')) {
-            $selectedRegion = Region::where('slug', $request->input('region'))->first();
-            if ($selectedRegion) {
-                $regionIds = array_merge([$selectedRegion->id], $selectedRegion->children()->pluck('id')->toArray());
-                $regionChildren = $selectedRegion->children;
+        // Paginate and log results
+        $products = $productsQuery->paginate(12);
+        Log::info('Products retrieved', ['query' => $request->query()]);
 
-                $productsQuery->whereIn('region_id', $regionIds);
-            }
-        }
-
-        if ($request->has('city')) {
-            $selectedCity = Region::where('slug', $request->input('city'))->first();
-            if ($selectedCity) {
-                $productsQuery->where('region_id', $selectedCity->id);
-            }
-        }
-
-        $products = $productsQuery->paginate(5);
-
-        return view('category', compact('category', 'user', 'usdRate', 'selectedCity', 'selectedRegion', 'regionChildren', 'products', 'mainRegions', 'selectedSubcategory', 'attributes', 'attributeValues'));
-    }
-
-    public function filterProducts($slug, Request $request)
-    {
-        $usdRate = $this->currencyService->getDollarRate();
-        if (!$usdRate || $usdRate <= 0) {
-            $usdRate = 12900;
-        }
-
-        $category = Category::where('slug', $slug)->with('subcategories')->first();
-        $productsQuery = Product::query();
-
-        if ($category) {
-            if ($request->has('subcategory')) {
-                $selectedSubcategory = $category->subcategories->where('slug', $request->input('subcategory'))->first();
-                if ($selectedSubcategory) {
-                    $productsQuery->where('subcategory_id', $selectedSubcategory->id);
-                } else {
-                    $subcategoryIds = $category->subcategories->pluck('id')->toArray();
-                    $productsQuery->whereIn('subcategory_id', $subcategoryIds);
-                }
-            }
-
-            $attributeFilters = Arr::except($request->all(), ['subcategory', 'currency', 'page', 'city', 'region', 'price_from', 'price_to', 'type', 'date_filter', 'with_images_only', 'search']);
-            if (!empty($attributeFilters)) {
-                foreach ($attributeFilters as $attributeSlug => $valueId) {
-                    $productsQuery->whereHas('attributeValues', function ($query) use ($attributeSlug, $valueId) {
-                        $query->whereHas('attributes', function ($subQuery) use ($attributeSlug) {
-                            $subQuery->where('attributes.slug', $attributeSlug);
-                        })->where('attribute_values.id', $valueId);
-                    });
-                }
-            }
-
-            if ($request->has('price_from') || $request->has('price_to')) {
-                $currency = $request->input('currency', 'usd');
-                $priceFrom = round((float) $request->input('price_from', 0), 2);
-                $priceTo = round((float) $request->input('price_to', PHP_INT_MAX), 2);
-
-                $productsQuery->where(function ($query) use ($priceFrom, $priceTo, $currency, $usdRate) {
-                    if ($currency === 'usd') {
-                        $query->where(function ($usdQuery) use ($priceFrom, $priceTo) {
-                            $usdQuery->where('currency', 'доллар')->whereBetween('price', [$priceFrom, $priceTo]);
-                        })->orWhere(function ($uzsQuery) use ($priceFrom, $priceTo, $usdRate) {
-                            $uzsQuery->where('currency', 'сум')->whereBetween('price', [$priceFrom * $usdRate, $priceTo * $usdRate]);
-                        });
-                    } elseif ($currency === 'uzs') {
-                        $query->where(function ($uzsQuery) use ($priceFrom, $priceTo) {
-                            $uzsQuery->where('currency', 'сум')->whereBetween('price', [$priceFrom, $priceTo]);
-                        })->orWhere(function ($usdQuery) use ($priceFrom, $priceTo, $usdRate) {
-                            $usdQuery->where('currency', 'доллар')->whereBetween('price', [$priceFrom / $usdRate, $priceTo / $usdRate]);
-                        });
-                    }
-                });
-            }
-
-            if ($request->has('region')) {
-                $selectedRegion = Region::where('slug', $request->input('region'))->first();
-                if ($selectedRegion) {
-                    $regionIds = array_merge([$selectedRegion->id], $selectedRegion->children()->pluck('id')->toArray());
-                    $productsQuery->whereIn('region_id', $regionIds);
-                }
-            }
-
-            if ($request->has('city')) {
-                $selectedCity = Region::where('slug', $request->input('city'))->first();
-                if ($selectedCity) {
-                    $productsQuery->where('region_id', $selectedCity->id);
-                }
-            }
-
-            if ($request->has('type')) {
-                $productsQuery->where('type', $request->input('type'));
-            }
-
-            if ($request->has('date_filter')) {
-                switch ($request->input('date_filter')) {
-                    case 'new':
-                        $productsQuery->orderBy('created_at', 'desc');
-                        break;
-                    case 'expensive':
-                        $productsQuery->orderBy('price', 'desc');
-                        break;
-                    case 'cheap':
-                        $productsQuery->orderBy('price', 'asc');
-                        break;
-                }
-            }
-
-            if ($request->has('search')) {
-                $input = $request->input('search');
-                $inputArray = explode(' ', strtolower($input));
-                $productsQuery->where(function ($query) use ($inputArray) {
-                    foreach ($inputArray as $word) {
-                        $query->orWhere('name', 'LIKE', "%$word%")
-                              ->orWhere('description', 'LIKE', "%$word%");
-                    }
-                });
-            }
-
-            $page = $request->input('page', 5);
-            $perPage = 5; // Match your pagination
-            $products = $productsQuery->paginate($perPage, ['*'], 'page', $page);
-
-            return response()->json([
-                'products' => view('components.card', compact('products', 'usdRate'))->render(), // Added $usdRate
-                'next_page' => $products->nextPageUrl() ? $products->currentPage() + 1 : null,
-                'has_more' => $products->hasMorePages(),
-            ]);
-        }
-
-        return response()->json(['error' => 'Category not found'], 404);
+        return view('category', compact(
+            'category', 'user', 'usdRate', 'selectedCity', 'selectedRegion',
+            'regionChildren', 'products', 'mainRegions', 'selectedSubcategory',
+            'attributes', 'attributeValues'
+        ));
     }
 }

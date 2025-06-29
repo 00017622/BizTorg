@@ -96,7 +96,7 @@
                 spinner.classList.remove('hidden');
                 buttonText.classList.add('hidden');
 
-                page++; // Increment page before fetching
+                page++;
                 console.log(`Fetching page ${page}`);
                 fetch(`https://biztorg.uz/get-paginated-products?page=${page}&per_page=24`, {
                     headers: {

@@ -14,15 +14,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller {
-    public function homePage(Request $request)
+     public function homePage(Request $request)
     {
         try {
+            // Log request parameters
             Log::info('homePage called', [
                 'categories' => $request->query('categories'),
-                'ad_type' => $request->query('ad_type')
+                'ad_type' => $request->query('ad_type'),
+                'page' => $request->query('page', 1),
             ]);
 
-            // Parse query parameters
+            // Handle categories filter
             $selectedCategoryIds = $request->query('categories', []);
             if (is_string($selectedCategoryIds)) {
                 $selectedCategoryIds = array_filter(
@@ -37,9 +39,15 @@ class CategoryController extends Controller {
             } else {
                 $selectedCategoryIds = [];
             }
+
+            // Handle ad_type filter
             $adType = $request->query('ad_type', 'all');
 
-            // Fetch categories
+            // Handle page parameter
+            $page = $request->input('page', 1);
+            $perPage = 24; // Match your desired items per page
+
+            // Fetch all categories
             $categories = Category::get();
             Log::info('Categories fetched', ['count' => $categories->count()]);
 
@@ -49,8 +57,10 @@ class CategoryController extends Controller {
                     'images',
                     'region' => function ($query) {
                         $query->with('parent');
-                    }
-                ]);
+                    },
+                    'user',
+                ])
+                ->orderBy('created_at', 'desc');
 
             // Apply time filter for ad_type == 'new'
             if ($adType === 'new') {
@@ -58,57 +68,58 @@ class CategoryController extends Controller {
                 $productQuery->where('created_at', '>=', $weekAgo);
             }
 
-            // Apply sorting
-            $productQuery->orderBy('created_at', 'desc');
-
-            // Apply category filter if selectedCategoryIds is not empty
-            $products = collect();
+            // Apply category filter if provided
             if (!empty($selectedCategoryIds)) {
-                $filteredQuery = clone $productQuery;
-                $filteredQuery->whereHas('subcategory', function ($query) use ($selectedCategoryIds) {
+                $productQuery->whereHas('subcategory', function ($query) use ($selectedCategoryIds) {
                     $query->whereIn('category_id', $selectedCategoryIds);
                 });
-                $products = $filteredQuery->take(30)->get();
-                Log::info('Filtered products fetched', ['count' => $products->count()]);
             }
 
-            // If no products found with category filter, fetch products with base query
-            if (empty($selectedCategoryIds) || $products->isEmpty()) {
-                $products = $productQuery->take(30)->get();
-                Log::info('All products fetched (fallback)', ['count' => $products->count()]);
-            }
+            // Paginate results
+            $products = $productQuery->paginate($perPage, ['*'], 'page', $page);
 
-            // Map products
-            $products = $products->map(function ($product) {
+            // Transform products
+            $transformedProducts = $products->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'price' => $product->price,
+                    'slug' => $product->slug,
                     'currency' => $product->currency,
-                    'created_at' => $product->created_at,
-                    'region' => optional($product->region)->parent
-                        ? optional($product->region->parent)->name
-                        : optional($product->region)->name,
+                    'created_at' => $product->created_at->toISOString(),
+                    'region' => $product->region
+                        ? ($product->region->parent
+                            ? $product->region->parent->name . ', ' . $product->region->name
+                            : $product->region->name)
+                        : null,
                     'images' => $product->images->map(function ($image) {
                         return ['image_url' => $image->image_url];
                     })->toArray(),
-                    'isFromShop' => $product->user->isShop,
+                    'isFromShop' => $product->user ? $product->user->isShop : false,
                 ];
             });
 
-            Log::info('Products processed', ['count' => $products->count()]);
+            Log::info('Products processed', ['count' => $transformedProducts->count()]);
 
+            // Return paginated response
             return response()->json([
                 'categories' => $categories,
-                'products' => $products,
+                'products' => $transformedProducts->values(),
+                'pagination' => [
+                    'current_page' => $products->currentPage(),
+                    'last_page' => $products->lastPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                    'has_more' => $products->hasMorePages(),
+                ],
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error('homePage error', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([
-                'error' => 'Error fetching data: ' . $e->getMessage()
+                'error' => 'Error fetching data: ' . $e->getMessage(),
             ], 500);
         }
     }

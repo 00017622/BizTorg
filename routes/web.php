@@ -88,6 +88,10 @@ Route::get('/get-paginated-products', [IndexController::class, 'getPaginatedProd
 
 Route::get('/category/{slug}/filter', [CategoryController::class, 'filterProducts'])->name('category.filter');
 
+// Route::get('/category/{slug}/attributes', [CategoryController::class, 'getAttributes']);
+
+Route::get('/category/{slug}/attributes', [CategoryController::class, 'getAttributes'])->name('category.attributes');
+
 require __DIR__ . '/auth.php';
 
 use App\Models\Product;
