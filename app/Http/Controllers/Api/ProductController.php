@@ -113,11 +113,13 @@ class ProductController extends Controller {
     public function filterProducts(Request $request)
 {
     try {
-        $usdRate = 12950; // $this->currencyService->getDollarRate() ?? 12900;
+
+        // Log::debug()
+        $usdRate = 12750; // $this->currencyService->getDollarRate() ?? 12900;
 
         // Get page and per_page from query parameters
         $page = $request->query('page', 1);
-        $perPage = $request->query('per_page', 10);
+        $perPage = $request->query('per_page', 24);
 
         // Step 1: Perform the search logic (from searchProducts)
         $query = trim($request->query('query', ''));
@@ -518,6 +520,190 @@ public function createProduct(Request $request)
  public function getProduct(Request $request, $productId)
     {
         $product = Product::with(['images', 'region.parent'])->where('id', $productId)->firstOrFail();
+        $user = $product->user;
+        $profile = $product->user->profile;
+
+        $attributes = $product->subcategory->attributes()->with(['attributeValues' => function ($query) use ($product) {
+            $query->whereExists(function ($q) use ($product) {
+                $q->from('product_attribute_values')
+                  ->whereColumn('product_attribute_values.attribute_value_id', 'attribute_values.id')
+                  ->where('product_attribute_values.product_id', $product->id);
+            });
+        }])->get();
+
+        $userProducts = $user->products()
+            ->with(['images', 'region.parent'])
+            ->where('id', '!=', $product->id)
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($product) { 
+                return [
+                    'id' => $product->id,
+                    'price' => $product->price,
+                    'currency' => $product->currency,
+                    'latitude' => $product->latitude,
+                    'longitude' => $product->longitude,
+                    'region' => $product->parentRegion->name ?? $product->region->name ?? null,
+                    'type' => $product->type,
+                    'name' => $product->name,
+                    'created_at' => $product->created_at,
+                    'description' => $product->description,
+                    'images' => $product->images->map(function ($image) { 
+                        return ['image_url' => $image->image_url]; 
+                    })
+                ];
+            });
+
+        $sameProducts = Product::with(['images', 'region.parent'])
+            ->where('subcategory_id', $product->subcategory->id)
+            ->where('id', '!=', $product->id)
+            ->whereNotIn('id', $user->products->pluck('id')->toArray())
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($product) { 
+                return [
+                    'id' => $product->id,
+                    'price' => $product->price,
+                    'currency' => $product->currency,
+                    'latitude' => $product->latitude,
+                    'longitude' => $product->longitude,
+                    'region' => $product->parentRegion->name ?? $product->region->name ?? null,
+                    'type' => $product->type,
+                    'name' => $product->name,
+                    'created_at' => $product->created_at,
+                    'description' => $product->description,
+                    'user' => [
+                        'user_name' => $product->user->name ?? 'Неизвестный пользователь',
+                    ],
+                    'images' => $product->images->map(function ($image) { 
+                        return ['image_url' => $image->image_url]; 
+                    })
+                ];
+            });
+
+        $productCount = $user->products()->count();
+
+        $productData = [
+            'id' => $product->id,
+            'subcategory_id' => $product->subcategory_id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'description' => $product->description,
+            'price' => $product->price,
+            'currency' => $product->currency,
+            'created_at' => $product->created_at,
+            'updated_at' => $product->updated_at,
+            'type' => $product->type,
+            'region_id' => $product->region_id,
+            'user_id' => $product->user_id,
+            'latitude' => $product->latitude,
+            'longitude' => $product->longitude,
+            'name_tsvector' => $product->name_tsvector,
+            'description_tsvector' => $product->description_tsvector,
+            'slug_tsvector' => $product->slug_tsvector,
+            'showNumber' => $product->showNumber,
+            'number' => $product->number,
+            'images' => $product->images->map(function ($image) {
+                return ['image_url' => $image->image_url];
+            })->toArray(),
+            'region' => $product->parentRegion->name . ' - ' .  $product->region->name,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'avatar' => $user->avatar,
+                'role_id' => $user->role_id,
+                'settings' => $user->settings,
+                'google_id' => $user->google_id,
+                'facebook_id' => $user->facebook_id,
+                'telegram_id' => $user->telegram_id,
+                'fcm_token' => $user->fcm_token,
+                'profile' => $profile ? [
+                    'id' => $profile->id,
+                    'user_id' => $profile->user_id,
+                    'phone' => $profile->phone,
+                    'region_id' => $profile->region_id,
+                    'address' => $profile->address,
+                    'avatar' => $profile->avatar,
+                    'created_at' => $profile->created_at,
+                    'updated_at' => $profile->updated_at,
+                    'latitude' => $profile->latitude,
+                    'longitude' => $profile->longitude,
+                ] : null,
+                'products' => $user->products->map(function ($prod) {
+                    return [
+                        'id' => $prod->id,
+                        'subcategory_id' => $prod->subcategory_id,
+                        'name' => $prod->name,
+                        'slug' => $prod->slug,
+                        'description' => $prod->description,
+                        'price' => $prod->price,
+                        'currency' => $prod->currency,
+                        'created_at' => $prod->created_at,
+                        'updated_at' => $prod->updated_at,
+                        'type' => $prod->type,
+                        'region_id' => $prod->region_id,
+                        'user_id' => $prod->user_id,
+                        'latitude' => $prod->latitude,
+                        'longitude' => $prod->longitude,
+                        'name_tsvector' => $prod->name_tsvector,
+                        'description_tsvector' => $prod->description_tsvector,
+                        'slug_tsvector' => $prod->slug_tsvector,
+                    ];
+                })->toArray(),
+            ],
+            'subcategory' => [
+                'id' => $product->subcategory->id,
+                'category_id' => $product->subcategory->category_id,
+                'name' => $product->subcategory->name,
+                'slug' => $product->subcategory->slug,
+                'created_at' => $product->subcategory->created_at,
+                'updated_at' => $product->subcategory->updated_at,
+            ],
+        ];
+
+        $shopProfile = null;
+
+        if($user->isShop) {
+            $shopProfile = $user->shopProfile;
+        }
+
+        $accessingUser = $request->query('user_id');
+
+        $isAlreadySubscriber = false;
+
+        $hasAlreadyRated = false;
+
+        if($request->query('user_id') != null && $user->isShop) {
+            $isAlreadySubscriber = $user->shopProfile->subscribers()->where('user_id', $request->query('user_id'))->exists();
+            $hasAlreadyRated = $user->shopProfile->raters()->where('user_id', $request->query('user_id'))->exists();
+        }
+
+        $data = [
+            'shopProfile'     => $shopProfile,
+            'isShop'          => $user->isShop ?? false,
+            'isAlreadySubscriber' => $isAlreadySubscriber,
+            'hasAlreadyRated' => $hasAlreadyRated,
+            'product'         => $productData,
+            'userProducts'    => $userProducts,
+            'sameProducts'    => $sameProducts,
+            'user'            => $user,
+            'profile'         => $profile,
+            'attributes'      => $attributes,
+            'userProductCount' => $productCount,
+        ];
+
+        return response()->json($data);
+    }
+
+     public function getProductBySlug(Request $request, $productSlug)
+    {
+        $product = Product::with(['images', 'region.parent'])->where('slug', $productSlug)->firstOrFail();
         $user = $product->user;
         $profile = $product->user->profile;
 
