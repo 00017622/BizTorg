@@ -55,11 +55,21 @@ class ApiSocialAuthController extends Controller {
             $token = $user->createToken('Auth-Api')->plainTextToken;
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Google login successful.',
-                'token' => $token,
-                'uuid' => $user->id,
-            ], 200); 
+    'status' => 'success',
+    'message' => 'Google login successful.',
+    'uuid' => $user->id,
+])->cookie(
+    'auth_token',
+    $token,
+    60 * 24 * 90,
+    '/',
+    null,
+    true,
+    true,
+    false,
+    'Strict'
+);
+
           
         } catch (Exception $e) {
             Log::error('Google login error: ' . $e->getMessage());
