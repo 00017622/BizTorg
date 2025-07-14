@@ -540,6 +540,7 @@ public function createProduct(Request $request)
             ->map(function ($product) { 
                 return [
                     'id' => $product->id,
+                    'slug' => $product->slug,
                     'price' => $product->price,
                     'currency' => $product->currency,
                     'latitude' => $product->latitude,
@@ -725,6 +726,7 @@ public function createProduct(Request $request)
                 return [
                     'id' => $product->id,
                     'price' => $product->price,
+                    'slug' => $product->slug,
                     'currency' => $product->currency,
                     'latitude' => $product->latitude,
                     'longitude' => $product->longitude,
@@ -749,6 +751,7 @@ public function createProduct(Request $request)
             ->map(function ($product) { 
                 return [
                     'id' => $product->id,
+                    'slug' => $product->slug,
                     'price' => $product->price,
                     'currency' => $product->currency,
                     'latitude' => $product->latitude,
