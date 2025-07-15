@@ -128,9 +128,18 @@ class ApiSocialAuthController extends Controller {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Facebook login successful.',
-                'token' => $token,
                 'uuid' => $user->id,
-            ], 200, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE); 
+            ], 200, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE)->cookie(
+    'auth_token',
+    $token,
+    60 * 24 * 90,
+    '/',
+    null,
+    true,
+    true,
+    false,
+    'Strict'
+);; 
 
         } catch(Exception $e) {
             Log::error('Facebook login error: ' . $e->getMessage());
