@@ -54,10 +54,19 @@ class CustomLoginController extends Controller {
 
         return response()->json([
             'uuid' => $user->id,
-            'token' => $token,
             'status' => 'success',
             'message' => 'Successfully logged in',
-        ], 200);
+        ], 200)->cookie(
+    'auth_token',
+    $token,
+    60 * 24 * 90,
+    '/',
+    null,
+    true,
+    true,
+    false,
+    'Strict'
+);
     }
 
 
@@ -273,11 +282,21 @@ class CustomLoginController extends Controller {
         }
 
         return response()->json([
-            'token' => $token,
+           
             'uuid' => $newUser->id,
             'status' => 'success',
             'message' => 'Успешно зарегестрированы!',
-        ], 201);
+        ], 201)->cookie(
+    'auth_token',
+    $token,
+    60 * 24 * 90,
+    '/',
+    null,
+    true,
+    true,
+    false,
+    'Strict'
+);;
     }
 
 
