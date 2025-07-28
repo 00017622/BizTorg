@@ -360,7 +360,7 @@ public function createProduct(Request $request)
         'description' => 'required|string|max:900',
         'subcategory_id' => 'required|exists:subcategories,id',
         'images' => 'nullable|array',
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
         'latitude' => 'required|numeric|between:-90,90',
         'longitude' => 'required|numeric|between:-180,180',
         'attributes' => 'nullable|array',

@@ -59,14 +59,14 @@ class CustomLoginController extends Controller {
         ], 200)->cookie(
     'auth_token',
     $token,
-    60 * 24 * 90,
-    '/',
-    null,
-    true,
-    true,
-    false,
-    'Strict'
-);
+    60 * 24 * 90,     // 90 days
+    '/',              // path
+    'localhost',      // domain: must match Nuxt (localhost)
+    false,            // secure: false for HTTP in local
+    true,             // httpOnly
+    false,            // raw
+    'Lax'             // or 'None' if you want aggressive cross-origin
+        );
     }
 
 
@@ -289,14 +289,14 @@ class CustomLoginController extends Controller {
         ], 201)->cookie(
     'auth_token',
     $token,
-    60 * 24 * 90,
-    '/',
-    null,
-    true,
-    true,
-    false,
-    'Strict'
-);;
+    60 * 24 * 90,     // 90 days
+    '/',              // path
+    'localhost',      // domain: must match Nuxt (localhost)
+    false,            // secure: false for HTTP in local
+    true,             // httpOnly
+    false,            // raw
+    'Lax'             // or 'None' if you want aggressive cross-origin
+        );
     }
 
 
