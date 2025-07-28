@@ -54,6 +54,7 @@ Route::post('v1/clear-fcm-token', [CustomLoginController::class, 'clearFcmToken'
 Route::get('v1/user/{id}', [CustomLoginController::class, 'show']);
 Route::get('v1/user/{id}/fcm-token', [CustomLoginController::class, 'getFcmToken']);
 
+Route::get('/v1/user/{uuid}/products', [ProductController::class, 'getUserProducts'])->middleware('auth:sanctum');
 Route::delete('/v1/products/delete/{productId}', [ProductController::class, 'removeProduct'])->middleware('auth:sanctum');
 Route::get('/v1/fetch/product/{id}', [ProductController::class, 'fetchSingleProduct']);
 
