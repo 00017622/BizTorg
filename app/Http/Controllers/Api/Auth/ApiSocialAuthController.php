@@ -58,19 +58,8 @@ class ApiSocialAuthController extends Controller {
     'status' => 'success',
     'message' => 'Google login successful.',
     'uuid' => $user->id,
-])->cookie(
-    'auth_token',
-    $token,
-    60 * 24 * 90,
-    '/',
-    null,
-    true,
-    true,
-    false,
-    'Strict'
-);
-
-          
+    'token' => $token,
+            ]);
         } catch (Exception $e) {
             Log::error('Google login error: ' . $e->getMessage());
             return response()->json([
@@ -129,17 +118,8 @@ class ApiSocialAuthController extends Controller {
                 'status' => 'success',
                 'message' => 'Facebook login successful.',
                 'uuid' => $user->id,
-            ], 200, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE)->cookie(
-    'auth_token',
-    $token,
-    60 * 24 * 90,
-    '/',
-    null,
-    true,
-    true,
-    false,
-    'Strict'
-);; 
+                'token' => $token,
+            ], 200, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE);
 
         } catch(Exception $e) {
             Log::error('Facebook login error: ' . $e->getMessage());

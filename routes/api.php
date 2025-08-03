@@ -42,7 +42,7 @@ Route::post('/v1/product/create', [ProductController::class, 'createProduct']);
 Route::get('/v1/product/{productId}', [ProductController::class, 'getProduct']);
 Route::get('/v1/product/slug/{productSlug}', [ProductController::class, 'getProductBySlug']);
 
-Route::get('/v1/favorites/', [ProductController::class, 'getFavorite'])->middleware('auth:sanctum');;
+Route::get('/v1/favorites/', [ProductController::class, 'getFavorite'])->middleware('auth:sanctum');
 Route::post('/v1/favorite/toggle/', [ProductController::class, 'toggleFavorites'])->middleware('auth:sanctum');
 Route::post('v1/send/message/', [MessagesController::class, 'sendMessage'])->middleware('auth:sanctum');
 
