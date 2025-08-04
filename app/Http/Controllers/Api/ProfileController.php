@@ -63,10 +63,14 @@ class ProfileController extends Controller
 
     public function getUserDataJson(Request $request, $id)
 {
-    $cacheKey = "user_data_{$id}";
-    $cacheDuration = 1; 
 
     $currentUserId = $request->query('current_user_id');
+
+
+    $cacheKey = "user_data_{$id}_viewer_{$currentUserId}";
+    $cacheDuration = 1; 
+
+    
 
     $userData = Cache::remember($cacheKey, $cacheDuration, function () use ($id, $currentUserId) {
         $user = User::findOrFail($id);
@@ -86,18 +90,24 @@ class ProfileController extends Controller
 
         $hasAlreadyRated = false;
 
-        if ($user->isShop && $currentUserId) {
-            // $shopProfileData = $user->shopProfile;
-            // $myProfile = $user->id == $user->shopProfile->user_id;
-            $isAlreadySubscriber = $user->shopProfile->subscribers()->where('user_id', $currentUserId)->exists();
-            $hasAlreadyRated = $user->shopProfile->raters()->where('user_id', $currentUserId)->exists();
-        }
+        $shopProfile = null; // Default null
+
+
+      if ($user->isShop) {
+    $shopProfile = $user->shopProfile;
+
+    if ($currentUserId) {
+        $isAlreadySubscriber = $shopProfile->subscribers()->where('user_id', $currentUserId)->exists();
+        $hasAlreadyRated = $shopProfile->raters()->where('user_id', $currentUserId)->exists();
+    }
+}
 
         return [
             'user' => $user,
             'user_profile' => $userProfile,
             'region' => $region,
             'isShop' => $user->isShop,
+            'shop_profile' => $shopProfile,
             'isAlreadySubscriber' => $isAlreadySubscriber,
             'hasAlreadyRated' => $hasAlreadyRated,
         ];
