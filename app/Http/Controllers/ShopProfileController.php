@@ -257,6 +257,7 @@ class ShopProfileController extends Controller
             ->get()->map(function ($product) {
                 return [
                     'id' => $product->id,
+                    'slug' => $product->slug,
                     'name' => $product->name,
                     'price' => $product->price,
                                 'currency' => $product->currency,
